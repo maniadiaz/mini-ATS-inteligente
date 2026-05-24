@@ -27,6 +27,13 @@ const Postulacion = sequelize.define('Postulacion', {
   },
   resultado: {
     type: DataTypes.JSON,
+    get() {
+      const raw = this.getDataValue('resultado')
+      if (typeof raw === 'string') {
+        try { return JSON.parse(raw) } catch { return raw }
+      }
+      return raw
+    },
   },
 }, {
   tableName: 'postulaciones',

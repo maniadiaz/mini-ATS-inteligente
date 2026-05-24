@@ -4,9 +4,10 @@ import {
   Box, Typography, TextField, IconButton, Card, CardContent,
   Select, MenuItem, FormControl, InputLabel, Button, Snackbar,
   Alert, Table, TableBody, TableCell, TableContainer, TableHead,
-  TableRow, Paper, Skeleton, Grid,
+  TableRow, Paper, Skeleton, Grid, Chip, Dialog, DialogTitle,
+  DialogContent, DialogActions,
 } from '@mui/material'
-import { ContentCopy, Download, ArrowBack } from '@mui/icons-material'
+import { ContentCopy, Download, ArrowBack, Edit, Block } from '@mui/icons-material'
 import api from '../api/axios'
 import { Vacante, Postulacion } from '../types'
 import CandidatoRow from '../components/CandidatoRow'
@@ -21,6 +22,8 @@ export default function VacanteDashboard() {
   const [snackbar, setSnackbar] = useState('')
   const [filtroRec, setFiltroRec] = useState('')
   const [orden, setOrden] = useState('score')
+  const [editOpen, setEditOpen] = useState(false)
+  const [editForm, setEditForm] = useState({ puesto: '', empresa: '', descripcion: '', anios_exp: '', stack: '', ingles: '', espanol: '', otros: '' })
 
   useEffect(() => {
     loadData()
@@ -64,6 +67,43 @@ export default function VacanteDashboard() {
     }
   }
 
+  const handleOpenEdit = () => {
+    if (!vacante) return
+    setEditForm({
+      puesto: vacante.puesto,
+      empresa: vacante.empresa,
+      descripcion: vacante.descripcion,
+      anios_exp: vacante.anios_exp,
+      stack: vacante.stack,
+      ingles: vacante.ingles,
+      espanol: vacante.espanol,
+      otros: vacante.otros,
+    })
+    setEditOpen(true)
+  }
+
+  const handleSaveEdit = async () => {
+    try {
+      const res = await api.put(`/vacante/${vid}`, editForm)
+      setVacante(res.data)
+      setEditOpen(false)
+      setSnackbar('Vacante actualizada')
+    } catch (err) {
+      setError('Error actualizando vacante')
+    }
+  }
+
+  const handleToggleActiva = async () => {
+    if (!vacante) return
+    try {
+      const res = await api.put(`/vacante/${vid}`, { activa: !vacante.activa })
+      setVacante(res.data)
+      setSnackbar(res.data.activa ? 'Vacante reactivada' : 'Vacante cerrada')
+    } catch (err) {
+      setError('Error actualizando estado')
+    }
+  }
+
   if (loading) {
     return (
       <Box>
@@ -87,7 +127,7 @@ export default function VacanteDashboard() {
     <Box>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate('/dashboard')}
@@ -95,10 +135,27 @@ export default function VacanteDashboard() {
           >
             Regresar
           </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button startIcon={<Edit />} size="small" variant="outlined" onClick={handleOpenEdit}>
+              Editar
+            </Button>
+            <Button
+              startIcon={<Block />}
+              size="small"
+              variant="outlined"
+              color={vacante.activa ? 'error' : 'success'}
+              onClick={handleToggleActiva}
+            >
+              {vacante.activa ? 'Cerrar Vacante' : 'Reactivar'}
+            </Button>
+          </Box>
         </Box>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          {vacante.puesto}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            {vacante.puesto}
+          </Typography>
+          <Chip label={vacante.activa ? 'Activa' : 'Cerrada'} color={vacante.activa ? 'success' : 'default'} size="small" />
+        </Box>
         <Typography variant="body1" color="text.secondary">
           {vacante.empresa} &middot; {vacante.anios_exp} años exp. &middot; Stack: {vacante.stack}
         </Typography>
@@ -239,6 +296,25 @@ export default function VacanteDashboard() {
           </Typography>
         </Box>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Editar Vacante</DialogTitle>
+        <DialogContent>
+          <TextField fullWidth label="Puesto" margin="normal" value={editForm.puesto} onChange={(e) => setEditForm({ ...editForm, puesto: e.target.value })} />
+          <TextField fullWidth label="Empresa" margin="normal" value={editForm.empresa} onChange={(e) => setEditForm({ ...editForm, empresa: e.target.value })} />
+          <TextField fullWidth label="Descripción" margin="normal" multiline minRows={4} maxRows={12} value={editForm.descripcion} onChange={(e) => setEditForm({ ...editForm, descripcion: e.target.value })} />
+          <TextField fullWidth label="Años de experiencia" margin="normal" value={editForm.anios_exp} onChange={(e) => setEditForm({ ...editForm, anios_exp: e.target.value })} />
+          <TextField fullWidth label="Stack" margin="normal" multiline minRows={2} value={editForm.stack} onChange={(e) => setEditForm({ ...editForm, stack: e.target.value })} />
+          <TextField fullWidth label="Inglés" margin="normal" value={editForm.ingles} onChange={(e) => setEditForm({ ...editForm, ingles: e.target.value })} />
+          <TextField fullWidth label="Español" margin="normal" value={editForm.espanol} onChange={(e) => setEditForm({ ...editForm, espanol: e.target.value })} />
+          <TextField fullWidth label="Otros requisitos" margin="normal" multiline value={editForm.otros} onChange={(e) => setEditForm({ ...editForm, otros: e.target.value })} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSaveEdit}>Guardar</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbar */}
       <Snackbar

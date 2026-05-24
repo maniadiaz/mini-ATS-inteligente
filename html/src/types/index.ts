@@ -9,8 +9,9 @@ export interface Vacante {
   espanol: string
   otros: string
   activa: boolean
-  postulaciones: string[]
-  creadaEn: number
+  postulaciones: { id: string }[] | string[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface StackMatch {
@@ -54,5 +55,6 @@ export interface Postulacion {
   email: string
   filename: string
   resultado: ResultadoIA
-  creadaEn: number
+  createdAt?: string
+  updatedAt?: string
 }

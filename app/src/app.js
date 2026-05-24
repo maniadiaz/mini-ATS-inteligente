@@ -162,6 +162,30 @@ app.post('/vacante', requireJWT, async (req, res) => {
   }
 });
 
+app.put('/vacante/:vid', requireJWT, async (req, res) => {
+  try {
+    const vacante = await Vacante.findByPk(req.params.vid);
+    if (!vacante) return res.status(404).json({ error: 'Vacante no encontrada' });
+
+    await vacante.update({
+      puesto: req.body.puesto ?? vacante.puesto,
+      empresa: req.body.empresa ?? vacante.empresa,
+      descripcion: req.body.descripcion ?? vacante.descripcion,
+      anios_exp: req.body.anios_exp ?? vacante.anios_exp,
+      stack: req.body.stack ?? vacante.stack,
+      ingles: req.body.ingles ?? vacante.ingles,
+      espanol: req.body.espanol ?? vacante.espanol,
+      otros: req.body.otros ?? vacante.otros,
+      activa: req.body.activa !== undefined ? req.body.activa : vacante.activa,
+    });
+
+    res.json(vacante);
+  } catch (err) {
+    console.error('Error actualizando vacante:', err.message);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
 app.get('/vacante/:vid/dashboard', requireJWT, async (req, res) => {
   try {
     const vacante = await Vacante.findByPk(req.params.vid);
@@ -209,13 +233,21 @@ app.get('/vacante/:vid/exportar', requireJWT, async (req, res) => {
 
 // API CV download
 app.get('/cv/:pid', requireJWT, async (req, res) => {
-  const post = await Postulacion.findByPk(req.params.pid);
-  if (!post) return res.status(404).json({ error: 'Postulación no encontrada' });
+  try {
+    const post = await Postulacion.findByPk(req.params.pid);
+    if (!post) return res.status(404).json({ error: 'Postulación no encontrada' });
 
-  const filepath = path.join(uploadsDir, post.filename);
-  if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Archivo no encontrado' });
+    const filepath = path.join(uploadsDir, post.filename);
+    if (!fs.existsSync(filepath)) {
+      console.error(`CV no encontrado: ${filepath}`);
+      return res.status(404).json({ error: 'Archivo no encontrado en disco' });
+    }
 
-  res.download(filepath, post.filename.split('_').slice(1).join('_'));
+    res.download(filepath, post.filename.split('_').slice(1).join('_'));
+  } catch (err) {
+    console.error('Error descargando CV:', err.message);
+    res.status(500).json({ error: 'Error interno' });
+  }
 });
 
 // --------------- Error handler for multer ---------------
