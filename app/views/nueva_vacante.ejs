@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Vacante - Mini ATS</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Crear Nueva Vacante</h1>
+        <a href="/dashboard" class="btn btn-secondary">&larr; Volver</a>
+
+        <form method="post" action="/vacante/nueva" class="form-card">
+            <label for="puesto">Puesto / Título</label>
+            <input type="text" id="puesto" name="puesto" required placeholder="Ej: Desarrollador Backend Senior">
+
+            <label for="empresa">Empresa o Proyecto</label>
+            <input type="text" id="empresa" name="empresa" required placeholder="Ej: TechCorp">
+
+            <label for="descripcion">Descripción del rol</label>
+            <textarea id="descripcion" name="descripcion" rows="4" required placeholder="Describe las responsabilidades y el contexto del puesto..."></textarea>
+
+            <label for="anios_exp">Años de experiencia requeridos</label>
+            <input type="text" id="anios_exp" name="anios_exp" required placeholder="Ej: 3-5">
+
+            <label for="stack">Stack tecnológico requerido</label>
+            <textarea id="stack" name="stack" rows="2" required placeholder="Ej: Python, FastAPI, PostgreSQL, Docker, AWS"></textarea>
+
+            <label for="ingles">Inglés requerido</label>
+            <select id="ingles" name="ingles" required>
+                <option value="Ninguno">Ninguno</option>
+                <option value="Básico">Básico</option>
+                <option value="Intermedio">Intermedio</option>
+                <option value="Avanzado">Avanzado</option>
+                <option value="Nativo">Nativo</option>
+            </select>
+
+            <label for="espanol">Español requerido</label>
+            <select id="espanol" name="espanol" required>
+                <option value="Ninguno">Ninguno</option>
+                <option value="Básico">Básico</option>
+                <option value="Intermedio">Intermedio</option>
+                <option value="Avanzado">Avanzado</option>
+                <option value="Nativo" selected>Nativo</option>
+            </select>
+
+            <label for="otros">Otros requisitos (opcional)</label>
+            <textarea id="otros" name="otros" rows="2" placeholder="Ej: Disponibilidad para viajar, certificaciones..."></textarea>
+
+            <button type="submit" class="btn btn-primary">Crear Vacante</button>
+        </form>
+    </div>
+</body>
+</html>

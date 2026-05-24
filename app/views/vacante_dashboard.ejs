@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= vacante.puesto %> - Candidatos</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="btn btn-secondary btn-sm">&larr; Volver al dashboard</a>
+
+        <header class="vacante-header">
+            <h1><%= vacante.puesto %></h1>
+            <p class="meta"><%= vacante.empresa %> &middot; <%= vacante.anios_exp %> años exp. &middot; Stack: <%= vacante.stack %></p>
+        </header>
+
+        <!-- Link público -->
+        <div class="card link-card">
+            <label><strong>Link público para candidatos:</strong></label>
+            <div class="link-copy">
+                <input type="text" id="link-publico" value="<%= linkPublico %>" readonly>
+                <button class="btn btn-primary btn-sm" onclick="copiarLink()">Copiar link</button>
+            </div>
+            <p class="meta">Total de postulantes: <strong><%= postulaciones.length %></strong></p>
+        </div>
+
+        <!-- Acciones -->
+        <div class="toolbar">
+            <a href="/vacante/<%= vacante.id %>/exportar" class="btn btn-primary">Exportar Excel</a>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros">
+            <form method="get" action="/vacante/<%= vacante.id %>/dashboard" class="filtros-form">
+                <label>Recomendación:</label>
+                <select name="recomendacion" onchange="this.form.submit()">
+                    <option value="" <%= !filtroRec ? 'selected' : '' %>>Todos</option>
+                    <option value="APTO" <%= filtroRec === 'APTO' ? 'selected' : '' %>>APTO</option>
+                    <option value="REVISAR" <%= filtroRec === 'REVISAR' ? 'selected' : '' %>>REVISAR</option>
+                    <option value="NO APTO" <%= filtroRec === 'NO APTO' ? 'selected' : '' %>>NO APTO</option>
+                </select>
+
+                <label>Ordenar por:</label>
+                <select name="orden" onchange="this.form.submit()">
+                    <option value="score" <%= orden === 'score' ? 'selected' : '' %>>Score % (desc)</option>
+                    <option value="nombre" <%= orden === 'nombre' ? 'selected' : '' %>>Nombre A-Z</option>
+                    <option value="fecha" <%= orden === 'fecha' ? 'selected' : '' %>>Más reciente</option>
+                </select>
+            </form>
+        </div>
+
+        <!-- Tabla de candidatos -->
+        <% if (postulaciones.length > 0) { %>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Email</th>
+                        <th>Score %</th>
+                        <th>Stack encontrado</th>
+                        <th>Inglés</th>
+                        <th>Años exp</th>
+                        <th>Recomendación</th>
+                        <th>CV</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% postulaciones.forEach((p, idx) => { %>
+                    <% const r = p.resultado || {}; %>
+                    <% const match = r.match_requisitos || {}; %>
+                    <tr class="expandable-row" onclick="toggleDetail('detail-<%= p.id %>')">
+                        <td><%= idx + 1 %></td>
+                        <td><strong><%= p.nombre %></strong></td>
+                        <td><%= p.telefono %></td>
+                        <td><%= p.email %></td>
+                        <td>
+                            <span class="score-badge <%= r.score_total >= 70 ? 'score-green' : (r.score_total >= 40 ? 'score-yellow' : 'score-red') %>">
+                                <%= r.score_total %>%
+                            </span>
+                        </td>
+                        <td>
+                            <div class="tags">
+                                <% (match.stack?.encontrados || []).forEach(tech => { %>
+                                <span class="tag tag-green"><%= tech %></span>
+                                <% }); %>
+                            </div>
+                        </td>
+                        <td><%= (match.ingles?.detalle || '').substring(0, 30) %></td>
+                        <td><%= (match.anios_exp?.detalle || '').substring(0, 30) %></td>
+                        <td>
+                            <% const recClass = (r.recomendacion || '').toLowerCase().replace(' ', '-'); %>
+                            <span class="badge badge-<%= recClass %>"><%= r.recomendacion %></span>
+                        </td>
+                        <td><a href="/cv/<%= p.id %>" class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Descargar</a></td>
+                    </tr>
+                    <tr class="detail-row" id="detail-<%= p.id %>" style="display:none;">
+                        <td colspan="10">
+                            <div class="detail-panel">
+                                <div class="detail-section">
+                                    <h4>Fortalezas</h4>
+                                    <ul>
+                                        <% (r.fortalezas || []).forEach(f => { %>
+                                        <li><%= f %></li>
+                                        <% }); %>
+                                    </ul>
+                                </div>
+                                <div class="detail-section">
+                                    <h4>Debilidades</h4>
+                                    <ul>
+                                        <% (r.debilidades || []).forEach(d => { %>
+                                        <li><%= d %></li>
+                                        <% }); %>
+                                    </ul>
+                                </div>
+                                <div class="detail-section">
+                                    <h4>Stack faltante</h4>
+                                    <div class="tags">
+                                        <% (match.stack?.faltantes || []).forEach(tech => { %>
+                                        <span class="tag tag-red"><%= tech %></span>
+                                        <% }); %>
+                                    </div>
+                                </div>
+                                <div class="detail-section full-width">
+                                    <h4>Resumen ejecutivo</h4>
+                                    <p><%= r.resumen_ejecutivo %></p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+        <% } else { %>
+        <p class="empty">No hay postulantes<%= filtroRec ? ` con filtro "${filtroRec}"` : '' %>.</p>
+        <% } %>
+    </div>
+
+    <script>
+        function toggleDetail(id) {
+            var row = document.getElementById(id);
+            row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+        }
+
+        function copiarLink() {
+            var input = document.getElementById('link-publico');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            var btn = event.target;
+            btn.textContent = '¡Copiado!';
+            setTimeout(function() { btn.textContent = 'Copiar link'; }, 2000);
+        }
+    </script>
+</body>
+</html>

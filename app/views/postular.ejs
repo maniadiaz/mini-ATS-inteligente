@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postularse - <%= vacante.puesto %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        .header-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            margin-bottom: 1.5rem;
+        }
+        .header-card h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 0.5rem;
+        }
+        .header-card .empresa {
+            color: #6b7280;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .info-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        .info-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #f3f4f6;
+        }
+        .info-card p {
+            color: #4b5563;
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+        .requisitos {
+            list-style: none;
+            display: grid;
+            gap: 0.75rem;
+        }
+        .requisitos li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #f9fafb;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        .requisitos li .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #ede9fe;
+            color: #7c3aed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+        .form-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .form-card h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #374151;
+            margin-bottom: 0.4rem;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="tel"],
+        .form-group input[type="email"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 4px rgba(124,58,237,0.1);
+        }
+        .file-upload {
+            position: relative;
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: border-color 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+        .file-upload:hover {
+            border-color: #7c3aed;
+            background: #faf5ff;
+        }
+        .file-upload input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-upload .file-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .file-upload .file-text {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        .file-upload .file-text strong {
+            color: #7c3aed;
+        }
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 0.9rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            margin-top: 1.5rem;
+        }
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(102,126,234,0.4);
+        }
+        .btn-submit:active { transform: translateY(0); }
+        .alert {
+            padding: 0.9rem 1.2rem;
+            border-radius: 10px;
+            margin-bottom: 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        @media (max-width: 480px) {
+            body { padding: 1rem 0.5rem; }
+            .header-card, .info-card, .form-card { padding: 1.5rem; }
+            .header-card h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-card">
+            <h1><%= vacante.puesto %></h1>
+            <p class="empresa"><%= vacante.empresa %></p>
+        </div>
+
+        <div class="info-card">
+            <h3>Sobre el rol</h3>
+            <p><%= vacante.descripcion %></p>
+            <ul class="requisitos">
+                <li><span class="icon">EXP</span> <span><strong>Experiencia:</strong> <%= vacante.anios_exp %> años</span></li>
+                <li><span class="icon">DEV</span> <span><strong>Stack:</strong> <%= vacante.stack %></span></li>
+                <li><span class="icon">EN</span> <span><strong>Inglés:</strong> <%= vacante.ingles %></span></li>
+                <li><span class="icon">ES</span> <span><strong>Español:</strong> <%= vacante.espanol %></span></li>
+                <% if (vacante.otros) { %>
+                <li><span class="icon">+</span> <span><strong>Otros:</strong> <%= vacante.otros %></span></li>
+                <% } %>
+            </ul>
+        </div>
+
+        <div class="form-card">
+            <h2>Enviar tu postulación</h2>
+
+            <% if (error) { %>
+            <div class="alert alert-error"><%= error %></div>
+            <% } %>
+
+            <form method="post" action="/postular/<%= vacante.id %>" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="nombre">Nombre completo</label>
+                    <input type="text" id="nombre" name="nombre" required placeholder="Ej: María García López">
+                </div>
+
+                <div class="form-group">
+                    <label for="telefono">Número telefónico</label>
+                    <input type="tel" id="telefono" name="telefono" required placeholder="+52 55 1234 5678">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Correo electrónico</label>
+                    <input type="email" id="email" name="email" required placeholder="tu@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label>CV (PDF o DOCX)</label>
+                    <div class="file-upload" id="fileUploadArea">
+                        <input type="file" id="cv" name="cv" accept=".pdf,.docx" required>
+                        <div class="file-icon">📄</div>
+                        <p class="file-text" id="fileText"><strong>Haz clic aquí</strong> o arrastra tu archivo<br>PDF o DOCX (máx. 5 MB)</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Enviar Postulación</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        const fileInput = document.getElementById('cv');
+        const fileText = document.getElementById('fileText');
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                fileText.innerHTML = '<strong>' + this.files[0].name + '</strong>';
+            }
+        });
+    </script>
+</body>
+</html>
