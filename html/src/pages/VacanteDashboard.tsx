@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import {
   Box, Typography, TextField, IconButton, Card, CardContent,
   Select, MenuItem, FormControl, InputLabel, Button, Snackbar,
   Alert, Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, Paper, Skeleton, Grid,
 } from '@mui/material'
-import { ContentCopy, Download } from '@mui/icons-material'
+import { ContentCopy, Download, ArrowBack } from '@mui/icons-material'
 import api from '../api/axios'
 import { Vacante, Postulacion } from '../types'
 import CandidatoRow from '../components/CandidatoRow'
 
 export default function VacanteDashboard() {
   const { vid } = useParams<{ vid: string }>()
+  const navigate = useNavigate()
   const [vacante, setVacante] = useState<Vacante | null>(null)
   const [postulaciones, setPostulaciones] = useState<Postulacion[]>([])
   const [loading, setLoading] = useState(true)
@@ -86,6 +87,15 @@ export default function VacanteDashboard() {
     <Box>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/dashboard')}
+            size="small"
+          >
+            Regresar
+          </Button>
+        </Box>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
           {vacante.puesto}
         </Typography>
