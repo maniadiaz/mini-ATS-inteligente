@@ -64,9 +64,9 @@ export default function NuevaVacante() {
               margin="normal" placeholder="Ej: TechCorp"
             />
             <TextField
-              fullWidth label="Descripción del rol" required multiline rows={4}
+              fullWidth label="Descripción del rol" required multiline minRows={6} maxRows={20}
               value={form.descripcion} onChange={handleChange('descripcion')}
-              margin="normal" placeholder="Describe las responsabilidades y el contexto del puesto..."
+              margin="normal" placeholder={"Describe las responsabilidades y el contexto del puesto...\n\nEjemplo:\n• Desarrollar nuevas funcionalidades\n• Consumir y crear APIs REST\n• Participar en revisiones de código"}
             />
             <TextField
               fullWidth label="Años de experiencia requeridos" required

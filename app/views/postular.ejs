@@ -9,7 +9,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #F9F6F0;
             min-height: 100vh;
             padding: 2rem 1rem;
         }
@@ -55,6 +55,7 @@
             color: #4b5563;
             margin-bottom: 1rem;
             line-height: 1.7;
+            white-space: pre-wrap;
         }
         .requisitos {
             list-style: none;
@@ -156,7 +157,7 @@
             display: block;
             width: 100%;
             padding: 0.9rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1A3C5E 0%, #2563eb 100%);
             color: #fff;
             border: none;
             border-radius: 10px;
@@ -169,9 +170,15 @@
         }
         .btn-submit:hover {
             transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(102,126,234,0.4);
+            box-shadow: 0 8px 20px rgba(26,60,94,0.4);
         }
         .btn-submit:active { transform: translateY(0); }
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
         .alert {
             padding: 0.9rem 1.2rem;
             border-radius: 10px;
@@ -255,6 +262,13 @@
             if (this.files.length > 0) {
                 fileText.innerHTML = '<strong>' + this.files[0].name + '</strong>';
             }
+        });
+
+        // Disable button on submit to prevent duplicates
+        document.querySelector('form').addEventListener('submit', function() {
+            const btn = this.querySelector('.btn-submit');
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
         });
     </script>
 </body>
