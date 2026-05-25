@@ -5,6 +5,11 @@ export interface Company {
   email: string
   status: 'trial' | 'active' | 'suspended' | 'cancelled'
   trial_ends_at?: string
+  cv_analizados_mes: number
+  cv_limit: number
+  cv_extras: number
+  cv_disponibles: number
+  cv_porcentaje: number
   createdAt?: string
 }
 
@@ -23,8 +28,19 @@ export interface PlanInfo {
   nombre: string
   precio: number
   trial_days: number
+  cv_limit: number
   mp_plan_id?: string | null
   activo?: boolean
+}
+
+export interface CvPack {
+  id: string
+  company_id: string
+  mp_payment_id: string
+  cantidad: number
+  monto: number
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: string
 }
 
 export interface SubscriptionInfo {

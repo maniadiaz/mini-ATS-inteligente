@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   AppBar, Toolbar, Typography, Button, Box, Container,
@@ -7,13 +8,28 @@ import {
   People, CreditCard, Business, Payment, Settings, Work,
 } from '@mui/icons-material'
 import { useAuth } from '../context/AuthContext'
+import api from '../api/axios'
 
 const DRAWER_WIDTH = 220
 
 export default function Layout() {
-  const { logout, role, companyStatus, companyNombre, isSuperAdmin } = useAuth()
+  const { logout, role, companyStatus, companyNombre, isSuperAdmin, isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+
+  const [cvPorcentaje, setCvPorcentaje] = useState(0)
+  const [cvDisponibles, setCvDisponibles] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!isSuperAdmin && isAdmin) {
+      api.get('/admin/suscripcion')
+        .then((res) => {
+          setCvPorcentaje(res.data.company?.cv_porcentaje || 0)
+          setCvDisponibles(res.data.company?.cv_disponibles ?? null)
+        })
+        .catch(() => {})
+    }
+  }, [location.pathname])
 
   const navItems = (() => {
     if (isSuperAdmin) {
@@ -65,6 +81,24 @@ export default function Layout() {
           </Button>
         }>
           Cuenta suspendida — Renueva tu suscripción para continuar.
+        </Alert>
+      )}
+      {!isSuperAdmin && cvDisponibles === 0 && (
+        <Alert severity="error" sx={{ borderRadius: 0 }} action={
+          <Button color="inherit" size="small" onClick={() => navigate('/admin/suscripcion')}>
+            Comprar →
+          </Button>
+        }>
+          Sin CVs disponibles — No puedes analizar más CVs este mes.
+        </Alert>
+      )}
+      {!isSuperAdmin && cvDisponibles !== null && cvDisponibles > 0 && cvPorcentaje >= 80 && cvPorcentaje < 100 && (
+        <Alert severity="warning" sx={{ borderRadius: 0 }} action={
+          <Button color="inherit" size="small" onClick={() => navigate('/admin/suscripcion')}>
+            Comprar extra →
+          </Button>
+        }>
+          Llevas el {cvPorcentaje}% de tus CVs este mes — Compra un paquete extra.
         </Alert>
       )}
 

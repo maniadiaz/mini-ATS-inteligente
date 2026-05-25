@@ -26,6 +26,22 @@ const Company = sequelize.define('Company', {
   trial_ends_at: {
     type: DataTypes.DATE,
   },
+  cv_analizados_mes: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  cv_extras: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  cv_limit: {
+    type: DataTypes.INTEGER,
+    defaultValue: 150,
+  },
+  periodo_actual: {
+    type: DataTypes.DATEONLY,
+    defaultValue: DataTypes.NOW,
+  },
 }, {
   tableName: 'companies',
   timestamps: true,

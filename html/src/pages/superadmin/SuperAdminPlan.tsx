@@ -33,6 +33,7 @@ export default function SuperAdminPlan() {
         nombre: plan.nombre,
         precio: plan.precio,
         trial_days: plan.trial_days,
+        cv_limit: plan.cv_limit,
       })
       setPlan(res.data)
       setSnackbar('Plan actualizado')
@@ -70,6 +71,9 @@ export default function SuperAdminPlan() {
             value={plan.precio} onChange={(e) => setPlan({ ...plan, precio: parseFloat(e.target.value) || 0 })} />
           <TextField fullWidth label="Días de trial" margin="normal" type="number"
             value={plan.trial_days} onChange={(e) => setPlan({ ...plan, trial_days: parseInt(e.target.value) || 14 })} />
+          <TextField fullWidth label="Límite de CVs base por empresa" margin="normal" type="number"
+            value={plan.cv_limit} onChange={(e) => setPlan({ ...plan, cv_limit: parseInt(e.target.value) || 150 })}
+            helperText="Al guardar, se actualizará el límite para todas las empresas activas" />
           <Button variant="contained" onClick={handleSave} disabled={saving} sx={{ mt: 2 }}>
             {saving ? <CircularProgress size={20} color="inherit" /> : 'Guardar cambios'}
           </Button>

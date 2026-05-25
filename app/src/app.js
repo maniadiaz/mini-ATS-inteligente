@@ -6,10 +6,11 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 
-const { sequelize, Vacante, Postulacion, seedInitial } = require('./models');
+const { sequelize, Vacante, Postulacion, Company, seedInitial } = require('./models');
 const { extractText } = require('./extractor');
 const { analyzeCV } = require('./analyzer');
 const { initCrons } = require('./cron');
+const { sendCvLimitWarningEmail } = require('./mailer');
 
 // Route imports
 const authRouter = require('./routes/auth');
@@ -73,8 +74,43 @@ app.post('/postular/:vid', upload.single('cv'), async (req, res) => {
   }
 
   try {
+    // Check CV limit for company
+    const company = await Company.findByPk(vacante.company_id);
+    if (company) {
+      // Reset counter if new month
+      const ahora = new Date();
+      const periodoActual = new Date(company.periodo_actual);
+      if (
+        ahora.getMonth() !== periodoActual.getMonth() ||
+        ahora.getFullYear() !== periodoActual.getFullYear()
+      ) {
+        await company.update({ cv_analizados_mes: 0, periodo_actual: ahora });
+        company.cv_analizados_mes = 0;
+      }
+
+      const cvDisponibles = (company.cv_limit - company.cv_analizados_mes) + company.cv_extras;
+      if (cvDisponibles <= 0) {
+        return res.render('postular', { vacante, error: 'La empresa ha alcanzado su límite de CVs analizados este mes. Intenta más tarde.' });
+      }
+    }
+
     const cvText = await extractText(req.file.path, req.file.originalname);
     const resultado = await analyzeCV(vacante, cvText);
+
+    // Increment CV counter AFTER successful analysis
+    if (company) {
+      if (company.cv_analizados_mes < company.cv_limit) {
+        await company.increment('cv_analizados_mes');
+      } else {
+        await company.decrement('cv_extras');
+      }
+
+      // Send warning email at 80% usage
+      const newCount = company.cv_analizados_mes + 1;
+      if (newCount === Math.ceil(company.cv_limit * 0.8)) {
+        await sendCvLimitWarningEmail(company);
+      }
+    }
 
     const postulacion = await Postulacion.create({
       company_id: vacante.company_id,

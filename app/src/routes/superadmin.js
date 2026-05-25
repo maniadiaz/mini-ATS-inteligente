@@ -30,6 +30,10 @@ router.get('/empresas', async (req, res) => {
       subscription: c.subscription || null,
       users_count: c.users?.length || 0,
       vacantes_count: c.vacantes?.length || 0,
+      cv_analizados_mes: c.cv_analizados_mes || 0,
+      cv_limit: c.cv_limit || 150,
+      cv_extras: c.cv_extras || 0,
+      cv_porcentaje: Math.round(((c.cv_analizados_mes || 0) / (c.cv_limit || 150)) * 100),
       createdAt: c.createdAt,
     }))
 
@@ -113,8 +117,18 @@ router.patch('/plan', async (req, res) => {
     if (req.body.nombre) updates.nombre = req.body.nombre
     if (req.body.precio !== undefined) updates.precio = req.body.precio
     if (req.body.trial_days !== undefined) updates.trial_days = req.body.trial_days
+    if (req.body.cv_limit !== undefined) updates.cv_limit = req.body.cv_limit
 
     await plan.update(updates)
+
+    // If cv_limit changed, update all active/trial companies
+    if (req.body.cv_limit !== undefined) {
+      await Company.update(
+        { cv_limit: req.body.cv_limit },
+        { where: { status: ['active', 'trial'] } }
+      )
+    }
+
     res.json(plan)
   } catch (err) {
     console.error('Error actualizando plan:', err.message)

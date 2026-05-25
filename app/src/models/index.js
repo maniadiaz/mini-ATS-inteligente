@@ -5,11 +5,15 @@ const Plan = require('./Plan')
 const Subscription = require('./Subscription')
 const Vacante = require('./Vacante')
 const Postulacion = require('./Postulacion')
+const CvPack = require('./CvPack')
 
 // Associations
 Company.hasMany(User, { foreignKey: 'company_id', as: 'users' })
 Company.hasOne(Subscription, { foreignKey: 'company_id', as: 'subscription' })
 Company.hasMany(Vacante, { foreignKey: 'company_id', as: 'vacantes' })
+Company.hasMany(CvPack, { foreignKey: 'company_id', as: 'cvPacks' })
+
+CvPack.belongsTo(Company, { foreignKey: 'company_id', as: 'company' })
 
 User.belongsTo(Company, { foreignKey: 'company_id', as: 'company' })
 
@@ -48,9 +52,10 @@ async function seedInitial() {
       nombre: process.env.PLAN_NAME || 'ATS Pro',
       precio: parseFloat(process.env.PLAN_PRICE) || 999,
       trial_days: parseInt(process.env.TRIAL_DAYS) || 14,
+      cv_limit: parseInt(process.env.CV_LIMIT_BASE) || 150,
     })
     console.log('Plan inicial creado.')
   }
 }
 
-module.exports = { sequelize, Company, User, Plan, Subscription, Vacante, Postulacion, seedInitial }
+module.exports = { sequelize, Company, User, Plan, Subscription, Vacante, Postulacion, CvPack, seedInitial }

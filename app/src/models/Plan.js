@@ -19,6 +19,10 @@ const Plan = sequelize.define('Plan', {
     type: DataTypes.INTEGER,
     defaultValue: 14,
   },
+  cv_limit: {
+    type: DataTypes.INTEGER,
+    defaultValue: 150,
+  },
   mp_plan_id: {
     type: DataTypes.STRING,
     allowNull: true,

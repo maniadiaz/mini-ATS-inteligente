@@ -61,6 +61,19 @@ function initCrons() {
     }
   })
 
+  // Job 4 — Day 1 of each month at 00:01: reset monthly CV counters
+  cron.schedule('1 0 1 * *', async () => {
+    try {
+      await Company.update(
+        { cv_analizados_mes: 0, periodo_actual: new Date() },
+        { where: { status: ['active', 'trial'] } }
+      )
+      console.log('Contadores de CVs reiniciados')
+    } catch (err) {
+      console.error('Cron reinicio CVs:', err.message)
+    }
+  })
+
   console.log('Cron jobs inicializados.')
 }
 

@@ -1,8 +1,8 @@
 const express = require('express')
 const crypto = require('crypto')
-const { MercadoPagoConfig, PreApproval } = require('mercadopago')
-const { Subscription, Company } = require('../models')
-const { sendPaymentConfirmedEmail, sendSuspensionEmail } = require('../mailer')
+const { MercadoPagoConfig, PreApproval, Payment: MpPayment } = require('mercadopago')
+const { Subscription, Company, CvPack } = require('../models')
+const { sendPaymentConfirmedEmail, sendSuspensionEmail, sendCvPackConfirmedEmail } = require('../mailer')
 
 const router = express.Router()
 
@@ -71,6 +71,36 @@ router.post('/mercadopago', async (req, res) => {
         }
       } else {
         await sub.update({ status: mpSub.status === 'pending' ? 'pending' : sub.status })
+      }
+    }
+
+    // Handle payment (CV pack checkout)
+    if (type === 'payment' && data?.id) {
+      const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
+      const mpPayment = new MpPayment(client)
+
+      const paymentInfo = await mpPayment.get({ id: data.id })
+      const externalRef = paymentInfo.external_reference
+
+      if (externalRef) {
+        // Find pending CvPack for this company
+        const pack = await CvPack.findOne({
+          where: { company_id: externalRef, status: 'pending' },
+          order: [['createdAt', 'DESC']],
+        })
+
+        if (pack) {
+          if (paymentInfo.status === 'approved') {
+            await pack.update({ mp_payment_id: String(data.id), status: 'approved' })
+            const company = await Company.findByPk(externalRef)
+            if (company) {
+              await company.increment('cv_extras', { by: pack.cantidad })
+              await sendCvPackConfirmedEmail(company, pack.cantidad)
+            }
+          } else if (paymentInfo.status === 'rejected') {
+            await pack.update({ mp_payment_id: String(data.id), status: 'rejected' })
+          }
+        }
       }
     }
 

@@ -93,9 +93,48 @@ async function sendPaymentConfirmedEmail(company) {
   }
 }
 
+async function sendCvPackConfirmedEmail(company, cantidad) {
+  try {
+    await transporter.sendMail({
+      from,
+      to: company.email,
+      subject: `Paquete de ${cantidad} CVs activado — ATS Pro`,
+      html: `
+        <h2>¡Paquete activado, ${company.nombre}!</h2>
+        <p>Tu compra de <strong>${cantidad} CVs adicionales</strong> ha sido confirmada.</p>
+        <p>Los CVs extra se han sumado a tu cuenta y no se vencen mensualmente.</p>
+        <p>Nuevo saldo de CVs extras: <strong>${(company.cv_extras || 0) + cantidad}</strong></p>
+      `,
+    })
+  } catch (err) {
+    console.error('Error enviando confirmación de paquete CV:', err.message)
+  }
+}
+
+async function sendCvLimitWarningEmail(company) {
+  try {
+    await transporter.sendMail({
+      from,
+      to: company.email,
+      subject: 'Te quedan pocos CVs este mes — ATS Pro',
+      html: `
+        <h2>Hola, ${company.nombre}</h2>
+        <p>Has utilizado el <strong>80%</strong> de tus CVs de este mes (${company.cv_analizados_mes} de ${company.cv_limit}).</p>
+        <p>Cuando alcances el límite, no podrás analizar más CVs hasta el próximo mes.</p>
+        <p>Puedes comprar paquetes adicionales de CVs en cualquier momento.</p>
+        <p><a href="${process.env.BASE_URL}/admin/suscripcion">Comprar CVs extras →</a></p>
+      `,
+    })
+  } catch (err) {
+    console.error('Error enviando aviso de límite CVs:', err.message)
+  }
+}
+
 module.exports = {
   sendWelcomeEmail,
   sendTrialWarningEmail,
   sendSuspensionEmail,
   sendPaymentConfirmedEmail,
+  sendCvPackConfirmedEmail,
+  sendCvLimitWarningEmail,
 }

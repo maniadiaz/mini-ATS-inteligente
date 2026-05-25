@@ -1,6 +1,6 @@
 const express = require('express')
-const { MercadoPagoConfig, PreApproval } = require('mercadopago')
-const { User, Company, Subscription, Plan } = require('../models')
+const { MercadoPagoConfig, PreApproval, Preference } = require('mercadopago')
+const { User, Company, Subscription, Plan, CvPack } = require('../models')
 const { requireJWT, requireRole } = require('../middleware/auth')
 const tenant = require('../middleware/tenant')
 const checkStatus = require('../middleware/checkStatus')
@@ -119,12 +119,23 @@ router.get('/suscripcion', async (req, res) => {
       daysLeft = Math.max(0, Math.ceil((new Date(company.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24)))
     }
 
+    const cv_analizados_mes = company.cv_analizados_mes || 0
+    const cv_limit = company.cv_limit || 150
+    const cv_extras = company.cv_extras || 0
+    const cv_disponibles = Math.max(0, cv_limit - cv_analizados_mes) + cv_extras
+    const cv_porcentaje = Math.round((cv_analizados_mes / cv_limit) * 100)
+
     res.json({
       company: {
         id: company.id,
         nombre: company.nombre,
         status: company.status,
         trial_ends_at: company.trial_ends_at,
+        cv_analizados_mes,
+        cv_limit,
+        cv_extras,
+        cv_disponibles,
+        cv_porcentaje,
       },
       subscription: company.subscription || null,
       plan: plan ? { nombre: plan.nombre, precio: plan.precio, trial_days: plan.trial_days } : null,
@@ -172,6 +183,53 @@ router.post('/suscripcion/iniciar', async (req, res) => {
   } catch (err) {
     console.error('Error iniciando suscripción:', err.message)
     res.status(500).json({ error: 'Error creando suscripción en Mercado Pago' })
+  }
+})
+
+// POST /admin/cvpack/comprar
+router.post('/cvpack/comprar', async (req, res) => {
+  try {
+    const company = await Company.findByPk(req.company_id)
+    if (!company) return res.status(404).json({ error: 'Empresa no encontrada' })
+
+    const cantidad = parseInt(process.env.CV_PACK_QUANTITY) || 50
+    const precio = parseFloat(process.env.CV_PACK_PRICE) || 299
+
+    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
+    const preference = new Preference(client)
+
+    const result = await preference.create({
+      body: {
+        items: [{
+          title: `Paquete ${cantidad} CVs adicionales — ATS Pro`,
+          quantity: 1,
+          unit_price: precio,
+          currency_id: 'MXN',
+        }],
+        back_urls: {
+          success: `${process.env.BASE_URL}/admin/suscripcion?pack=success`,
+          failure: `${process.env.BASE_URL}/admin/suscripcion?pack=failure`,
+          pending: `${process.env.BASE_URL}/admin/suscripcion?pack=pending`,
+        },
+        auto_return: 'approved',
+        external_reference: company.id,
+        notification_url: `${process.env.BASE_URL}/webhook/mercadopago`,
+      },
+    })
+
+    // Save CvPack record
+    await CvPack.create({
+      company_id: company.id,
+      mp_payment_id: result.id,
+      cantidad,
+      monto: precio,
+      status: 'pending',
+    })
+
+    res.json({ init_point: result.init_point })
+  } catch (err) {
+    console.error('Error comprando paquete CV:', err.message)
+    res.status(500).json({ error: 'Error creando pago en Mercado Pago' })
   }
 })
 

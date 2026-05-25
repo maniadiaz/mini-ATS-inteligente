@@ -17,6 +17,10 @@ interface EmpresaRow {
   subscription: any
   users_count: number
   vacantes_count: number
+  cv_analizados_mes: number
+  cv_limit: number
+  cv_extras: number
+  cv_porcentaje: number
   createdAt: string
 }
 
@@ -66,6 +70,7 @@ export default function SuperAdminEmpresas() {
               <TableCell sx={{ color: 'white', fontWeight: 700 }}>Trial</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 700 }}>Usuarios</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 700 }}>Vacantes</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 700 }}>CVs mes</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 700 }}>Acciones</TableCell>
             </TableRow>
           </TableHead>
@@ -86,6 +91,15 @@ export default function SuperAdminEmpresas() {
                   <TableCell>{e.users_count}</TableCell>
                   <TableCell>{e.vacantes_count}</TableCell>
                   <TableCell>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 600, color: e.cv_porcentaje >= 100 ? 'error.main' : e.cv_porcentaje >= 80 ? 'warning.main' : 'text.primary' }}
+                    >
+                      {e.cv_analizados_mes} / {e.cv_limit}
+                      {e.cv_extras > 0 && ` (+${e.cv_extras})`}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
                     {e.status === 'suspended' ? (
                       <IconButton size="small" color="success" onClick={(ev) => { ev.stopPropagation(); handleToggleStatus(e) }}>
                         <CheckCircle />
@@ -98,7 +112,7 @@ export default function SuperAdminEmpresas() {
                   </TableCell>
                 </TableRow>
                 <TableRow key={`${e.id}-detail`}>
-                  <TableCell colSpan={9} sx={{ py: 0 }}>
+                  <TableCell colSpan={10} sx={{ py: 0 }}>
                     <Collapse in={expanded === e.id} unmountOnExit>
                       <Box sx={{ py: 2, px: 2 }}>
                         <Typography variant="body2" color="text.secondary">
