@@ -8,6 +8,10 @@ const Postulacion = sequelize.define('Postulacion', {
     primaryKey: true,
     defaultValue: () => uuidv4().slice(0, 8),
   },
+  company_id: {
+    type: DataTypes.UUID,
+    allowNull: false,
+  },
   vacante_id: {
     type: DataTypes.STRING(8),
     allowNull: false,

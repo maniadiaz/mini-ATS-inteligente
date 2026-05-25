@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import {
   Box, Card, CardContent, TextField, Button, Typography,
   Alert, CircularProgress,
@@ -8,8 +8,8 @@ import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 
 export default function Login() {
-  const [user, setUser] = useState('')
-  const [pass, setPass] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
@@ -21,7 +21,7 @@ export default function Login() {
     setLoading(true)
 
     try {
-      const res = await api.post('/auth/login', { user, pass })
+      const res = await api.post('/auth/login', { email, password })
       login(res.data.token)
       navigate('/dashboard')
     } catch (err: any) {
@@ -44,7 +44,7 @@ export default function Login() {
       <Card sx={{ width: '100%', maxWidth: 400, p: 2 }}>
         <CardContent>
           <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 700, color: 'primary.main' }}>
-            ATS Inteligente
+            ATS Pro
           </Typography>
           <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
             Inicia sesión para acceder al panel de reclutamiento
@@ -55,9 +55,10 @@ export default function Login() {
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Usuario"
-              value={user}
-              onChange={(e) => setUser(e.target.value)}
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               margin="normal"
               required
               autoFocus
@@ -66,8 +67,8 @@ export default function Login() {
               fullWidth
               label="Contraseña"
               type="password"
-              value={pass}
-              onChange={(e) => setPass(e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               margin="normal"
               required
             />
@@ -82,6 +83,13 @@ export default function Login() {
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Iniciar Sesión'}
             </Button>
           </Box>
+
+          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+            ¿No tienes cuenta?{' '}
+            <Link to="/register" style={{ color: 'inherit', fontWeight: 600 }}>
+              Registra tu empresa
+            </Link>
+          </Typography>
         </CardContent>
       </Card>
     </Box>

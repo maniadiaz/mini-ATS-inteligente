@@ -8,6 +8,10 @@ const Vacante = sequelize.define('Vacante', {
     primaryKey: true,
     defaultValue: () => uuidv4().slice(0, 8),
   },
+  company_id: {
+    type: DataTypes.UUID,
+    allowNull: false,
+  },
   puesto: {
     type: DataTypes.STRING,
     allowNull: false,

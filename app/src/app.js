@@ -5,16 +5,22 @@ const path = require('path');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
-const jwt = require('jsonwebtoken');
 
+const { sequelize, Vacante, Postulacion, seedInitial } = require('./models');
 const { extractText } = require('./extractor');
 const { analyzeCV } = require('./analyzer');
-const { exportarExcel } = require('./exporter');
-const { sequelize, Vacante, Postulacion, Usuario, seedAdmin } = require('./models');
+const { initCrons } = require('./cron');
+
+// Route imports
+const authRouter = require('./routes/auth');
+const vacantesRouter = require('./routes/vacantes');
+const cvRouter = require('./routes/cv');
+const adminRouter = require('./routes/admin');
+const superadminRouter = require('./routes/superadmin');
+const webhookRouter = require('./routes/webhook');
 
 const app = express();
 const PORT = process.env.PORT || 3105;
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'default-jwt-secret';
 
 // --------------- Config ---------------
 app.set('view engine', 'ejs');
@@ -29,7 +35,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Multer config
+// Multer config (for public postular form)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
   filename: (req, file, cb) => cb(null, uuidv4() + '_' + file.originalname),
@@ -54,13 +60,13 @@ const upload = multer({
 
 app.get('/postular/:vid', async (req, res) => {
   const vacante = await Vacante.findByPk(req.params.vid);
-  if (!vacante) return res.status(404).send('Vacante no encontrada');
+  if (!vacante || !vacante.activa) return res.status(404).send('Vacante no encontrada');
   res.render('postular', { vacante, error: null });
 });
 
 app.post('/postular/:vid', upload.single('cv'), async (req, res) => {
   const vacante = await Vacante.findByPk(req.params.vid);
-  if (!vacante) return res.status(404).send('Vacante no encontrada');
+  if (!vacante || !vacante.activa) return res.status(404).send('Vacante no encontrada');
 
   if (!req.file) {
     return res.render('postular', { vacante, error: 'Solo se aceptan archivos .pdf y .docx' });
@@ -71,6 +77,7 @@ app.post('/postular/:vid', upload.single('cv'), async (req, res) => {
     const resultado = await analyzeCV(vacante, cvText);
 
     const postulacion = await Postulacion.create({
+      company_id: vacante.company_id,
       vacante_id: vacante.id,
       nombre: req.body.nombre,
       telefono: req.body.telefono,
@@ -92,163 +99,13 @@ app.get('/confirmacion/:pid', async (req, res) => {
   res.render('confirmacion', { post });
 });
 
-// =============== API ROUTES (JSON + JWT) ===============
-
-// JWT middleware
-function requireJWT(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No autorizado' });
-  }
-  try {
-    const token = authHeader.split(' ')[1];
-    jwt.verify(token, JWT_SECRET);
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Token inválido o expirado' });
-  }
-}
-
-// API Auth
-app.post('/auth/login', async (req, res) => {
-  const { user, pass } = req.body;
-  try {
-    const usuario = await Usuario.findOne({ where: { username: user, activo: true } });
-    if (usuario && usuario.verifyPassword(pass)) {
-      const token = jwt.sign(
-        { id: usuario.id, user: usuario.username, rol: usuario.rol },
-        JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-      );
-      return res.json({ token, usuario: { id: usuario.id, username: usuario.username, nombre: usuario.nombre, rol: usuario.rol } });
-    }
-    res.status(401).json({ error: 'Credenciales incorrectas' });
-  } catch (err) {
-    console.error('Error en login:', err.message);
-    res.status(500).json({ error: 'Error interno' });
-  }
-});
-
-// API Vacantes
-app.get('/vacante', requireJWT, async (req, res) => {
-  try {
-    const vacantes = await Vacante.findAll({
-      include: [{ model: Postulacion, as: 'postulaciones', attributes: ['id'] }],
-      order: [['createdAt', 'DESC']],
-    });
-    res.json(vacantes);
-  } catch (err) {
-    console.error('Error listando vacantes:', err.message);
-    res.status(500).json({ error: 'Error interno' });
-  }
-});
-
-app.post('/vacante', requireJWT, async (req, res) => {
-  try {
-    const vacante = await Vacante.create({
-      puesto: req.body.puesto,
-      empresa: req.body.empresa,
-      descripcion: req.body.descripcion,
-      anios_exp: req.body.anios_exp,
-      stack: req.body.stack,
-      ingles: req.body.ingles,
-      espanol: req.body.espanol,
-      otros: req.body.otros || '',
-    });
-    res.json(vacante);
-  } catch (err) {
-    console.error('Error creando vacante:', err.message);
-    res.status(500).json({ error: 'Error interno' });
-  }
-});
-
-app.put('/vacante/:vid', requireJWT, async (req, res) => {
-  try {
-    const vacante = await Vacante.findByPk(req.params.vid);
-    if (!vacante) return res.status(404).json({ error: 'Vacante no encontrada' });
-
-    await vacante.update({
-      puesto: req.body.puesto ?? vacante.puesto,
-      empresa: req.body.empresa ?? vacante.empresa,
-      descripcion: req.body.descripcion ?? vacante.descripcion,
-      anios_exp: req.body.anios_exp ?? vacante.anios_exp,
-      stack: req.body.stack ?? vacante.stack,
-      ingles: req.body.ingles ?? vacante.ingles,
-      espanol: req.body.espanol ?? vacante.espanol,
-      otros: req.body.otros ?? vacante.otros,
-      activa: req.body.activa !== undefined ? req.body.activa : vacante.activa,
-    });
-
-    res.json(vacante);
-  } catch (err) {
-    console.error('Error actualizando vacante:', err.message);
-    res.status(500).json({ error: 'Error interno' });
-  }
-});
-
-app.get('/vacante/:vid/dashboard', requireJWT, async (req, res) => {
-  try {
-    const vacante = await Vacante.findByPk(req.params.vid);
-    if (!vacante) return res.status(404).json({ error: 'Vacante no encontrada' });
-
-    let posts = await Postulacion.findAll({ where: { vacante_id: req.params.vid } });
-
-    // Filter by recommendation (JSON field — filter in JS)
-    const rec = req.query.recomendacion || '';
-    if (rec && ['APTO', 'REVISAR', 'NO APTO'].includes(rec)) {
-      posts = posts.filter((p) => p.resultado && p.resultado.recomendacion === rec);
-    }
-
-    // Sort
-    const orden = req.query.orden || 'score';
-    if (orden === 'nombre') {
-      posts.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
-    } else if (orden === 'fecha') {
-      posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else {
-      posts.sort((a, b) => (b.resultado?.score_total || 0) - (a.resultado?.score_total || 0));
-    }
-
-    res.json({ vacante, postulaciones: posts });
-  } catch (err) {
-    console.error('Error en dashboard:', err.message);
-    res.status(500).json({ error: 'Error interno' });
-  }
-});
-
-app.get('/vacante/:vid/exportar', requireJWT, async (req, res) => {
-  try {
-    const vacante = await Vacante.findByPk(req.params.vid);
-    if (!vacante) return res.status(404).json({ error: 'Vacante no encontrada' });
-
-    const posts = await Postulacion.findAll({ where: { vacante_id: req.params.vid } });
-    posts.sort((a, b) => (b.resultado?.score_total || 0) - (a.resultado?.score_total || 0));
-
-    await exportarExcel(res, vacante, posts);
-  } catch (err) {
-    console.error('Error exportando:', err.message);
-    res.status(500).json({ error: 'Error interno' });
-  }
-});
-
-// API CV download
-app.get('/cv/:pid', requireJWT, async (req, res) => {
-  try {
-    const post = await Postulacion.findByPk(req.params.pid);
-    if (!post) return res.status(404).json({ error: 'Postulación no encontrada' });
-
-    const filepath = path.join(uploadsDir, post.filename);
-    if (!fs.existsSync(filepath)) {
-      console.error(`CV no encontrado: ${filepath}`);
-      return res.status(404).json({ error: 'Archivo no encontrado en disco' });
-    }
-
-    res.download(filepath, post.filename.split('_').slice(1).join('_'));
-  } catch (err) {
-    console.error('Error descargando CV:', err.message);
-    res.status(500).json({ error: 'Error interno' });
-  }
-});
+// =============== API ROUTES ===============
+app.use('/auth', authRouter);
+app.use('/vacante', vacantesRouter);
+app.use('/cv', cvRouter);
+app.use('/admin', adminRouter);
+app.use('/superadmin', superadminRouter);
+app.use('/webhook', webhookRouter);
 
 // --------------- Error handler for multer ---------------
 app.use((err, req, res, next) => {
@@ -260,7 +117,8 @@ app.use((err, req, res, next) => {
 
 // --------------- Start with DB sync ---------------
 sequelize.sync({ alter: true }).then(async () => {
-  await seedAdmin();
+  await seedInitial();
+  initCrons();
   app.listen(PORT, () => {
     console.log(`Mini ATS Inteligente corriendo en http://localhost:${PORT}`);
   });

@@ -19,6 +19,9 @@ api.interceptors.response.use(
       localStorage.removeItem('ats_token')
       window.location.href = '/login'
     }
+    if (error.response?.status === 403 && error.response?.data?.redirect) {
+      window.location.href = error.response.data.redirect
+    }
     return Promise.reject(error)
   }
 )
