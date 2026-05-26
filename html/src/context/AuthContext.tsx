@@ -42,6 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const payload = useMemo(() => decodeToken(token), [token])
 
+  // Clear localStorage if token is invalid or expired
+  const isTokenValid = !!token && !!payload && payload.exp * 1000 > Date.now()
+  
+  if (token && !isTokenValid) {
+    localStorage.removeItem('ats_token')
+    setToken(null)
+  }
+
   const login = (newToken: string) => {
     localStorage.setItem('ats_token', newToken)
     setToken(newToken)
@@ -55,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextType = {
     token,
-    isAuthenticated: !!token && !!payload,
+    isAuthenticated: isTokenValid,
     role: payload?.role || null,
     companyStatus: payload?.company_status || null,
     companyNombre: payload?.company_nombre || null,

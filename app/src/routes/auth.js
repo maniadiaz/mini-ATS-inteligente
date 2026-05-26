@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const { Company, User, Plan } = require('../models')
 const { sendWelcomeEmail } = require('../mailer')
+const { requireJWT } = require('../middleware/auth')
 
 const router = express.Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'default-jwt-secret'
@@ -133,6 +134,35 @@ router.post('/register', async (req, res) => {
     })
   } catch (err) {
     console.error('Error en registro:', err.message)
+    res.status(500).json({ error: 'Error interno' })
+  }
+})
+
+// GET /auth/refresh — Refresh token with updated company status
+router.get('/refresh', requireJWT, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user_id, {
+      include: [{ model: Company, as: 'company' }],
+    })
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' })
+    }
+
+    const payload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      company_id: user.company_id,
+      company_nombre: user.company?.nombre || null,
+      company_status: user.company?.status || null,
+    }
+
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' })
+
+    res.json({ token })
+  } catch (err) {
+    console.error('Error refrescando token:', err.message)
     res.status(500).json({ error: 'Error interno' })
   }
 })

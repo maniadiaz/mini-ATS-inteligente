@@ -6,6 +6,7 @@ import {
 } from '@mui/material'
 import { CreditCard, ShoppingCart } from '@mui/icons-material'
 import api from '../../api/axios'
+import { useAuth } from '../../context/AuthContext'
 
 interface SuscripcionData {
   company: {
@@ -19,6 +20,7 @@ interface SuscripcionData {
 }
 
 export default function AdminSuscripcion() {
+  const { login } = useAuth()
   const [data, setData] = useState<SuscripcionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activating, setActivating] = useState(false)
@@ -26,6 +28,15 @@ export default function AdminSuscripcion() {
   const [error, setError] = useState('')
   const [snackbar, setSnackbar] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()
+
+  const refreshToken = async () => {
+    try {
+      const res = await api.get('/auth/refresh')
+      login(res.data.token)
+    } catch (err) {
+      console.error('Error refrescando token:', err)
+    }
+  }
 
   useEffect(() => {
     loadData()
@@ -36,6 +47,7 @@ export default function AdminSuscripcion() {
       setSnackbar('¡Suscripción activada exitosamente!')
       searchParams.delete('sub')
       setSearchParams(searchParams, { replace: true })
+      refreshToken() // Refresh token to update company status
     } else if (subStatus === 'cancelled') {
       setError('Pago cancelado')
       searchParams.delete('sub')

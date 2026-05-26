@@ -29,7 +29,7 @@ app.set('views', path.join(__dirname, '..', 'views'));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // IMPORTANT: Stripe webhook needs raw body BEFORE express.json()
-app.use('/webhook/stripe', express.raw({ type: 'application/json' }), webhookRouter);
+app.use('/webhook', express.raw({ type: 'application/json' }), webhookRouter)
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
