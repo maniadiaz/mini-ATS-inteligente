@@ -10,6 +10,8 @@ import NuevaVacante from './pages/NuevaVacante'
 import VacanteDashboard from './pages/VacanteDashboard'
 import AdminUsuarios from './pages/admin/AdminUsuarios'
 import AdminSuscripcion from './pages/admin/AdminSuscripcion'
+import AdminConfiguracion from './pages/admin/AdminConfiguracion'
+import AdminEmpresa from './pages/admin/AdminEmpresa'
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard'
 import SuperAdminEmpresas from './pages/superadmin/SuperAdminEmpresas'
 import SuperAdminPagos from './pages/superadmin/SuperAdminPagos'
@@ -39,7 +41,10 @@ export default function App() {
         <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin']} />}>
           <Route element={<Layout />}>
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-            <Route path="/admin/suscripcion" element={<AdminSuscripcion />} />
+            {/* Legacy redirect: /admin/suscripcion → /admin/configuracion */}
+            <Route path="/admin/suscripcion" element={<Navigate to="/admin/configuracion" replace />} />
+            <Route path="/admin/configuracion" element={<AdminConfiguracion />} />
+            <Route path="/admin/empresa" element={<AdminEmpresa />} />
           </Route>
         </Route>
 

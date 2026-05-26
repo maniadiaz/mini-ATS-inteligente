@@ -10,7 +10,7 @@ const { sequelize, Vacante, Postulacion, Company, seedInitial } = require('./mod
 const { extractText } = require('./extractor');
 const { analyzeCV } = require('./analyzer');
 const { initCrons } = require('./cron');
-const { sendCvLimitWarningEmail } = require('./mailer');
+const { sendCvLimitWarningEmail, sendNewApplicationEmail } = require('./mailer');
 
 // Route imports
 const authRouter = require('./routes/auth');
@@ -27,6 +27,7 @@ const PORT = process.env.PORT || 3105;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
 app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use('/logos', express.static(path.join(__dirname, '..', 'public', 'logos')));
 
 // IMPORTANT: Stripe webhook needs raw body BEFORE express.json()
 app.use('/webhook', express.raw({ type: 'application/json' }), webhookRouter)
@@ -38,6 +39,12 @@ app.use(express.json());
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Logos directory
+const logosDir = path.join(__dirname, '..', 'public', 'logos');
+if (!fs.existsSync(logosDir)) {
+  fs.mkdirSync(logosDir, { recursive: true });
 }
 
 // Multer config (for public postular form)
@@ -64,14 +71,43 @@ const upload = multer({
 // --------------- Public routes (EJS for candidates) ---------------
 
 app.get('/postular/:vid', async (req, res) => {
-  const vacante = await Vacante.findByPk(req.params.vid);
-  if (!vacante || !vacante.activa) return res.status(404).send('Vacante no encontrada');
-  res.render('postular', { vacante, error: null });
+  const vacante = await Vacante.findByPk(req.params.vid, {
+    include: [{ model: Company, as: 'company', attributes: ['nombre', 'descripcion', 'sitio_web', 'industria', 'logo_url'] }]
+  });
+  if (!vacante) return res.status(404).send('Vacante no encontrada');
+
+  // Check if vacante is open for applications
+  const ahora = new Date();
+  const inicio = vacante.fecha_inicio ? new Date(vacante.fecha_inicio) : null;
+  const fin = vacante.fecha_fin ? new Date(vacante.fecha_fin) : null;
+
+  if (!vacante.activa) {
+    return res.render('postular', { vacante, company: vacante.company, cerrada: true, motivo: 'manual', error: null });
+  }
+  if (inicio && ahora < inicio) {
+    return res.render('postular', { vacante, company: vacante.company, cerrada: true, motivo: 'no_iniciada', fecha_inicio: vacante.fecha_inicio, error: null });
+  }
+  if (fin && ahora > fin) {
+    return res.render('postular', { vacante, company: vacante.company, cerrada: true, motivo: 'vencida', fecha_fin: vacante.fecha_fin, error: null });
+  }
+
+  res.render('postular', { vacante, company: vacante.company, cerrada: false, error: null });
 });
 
 app.post('/postular/:vid', upload.single('cv'), async (req, res) => {
-  const vacante = await Vacante.findByPk(req.params.vid);
-  if (!vacante || !vacante.activa) return res.status(404).send('Vacante no encontrada');
+  const vacante = await Vacante.findByPk(req.params.vid, {
+    include: [{ model: Company, as: 'company' }]
+  });
+  if (!vacante) return res.status(404).send('Vacante no encontrada');
+
+  // Validate vacante is open
+  const ahora = new Date();
+  const inicio = vacante.fecha_inicio ? new Date(vacante.fecha_inicio) : null;
+  const fin = vacante.fecha_fin ? new Date(vacante.fecha_fin) : null;
+
+  if (!vacante.activa || (inicio && ahora < inicio) || (fin && ahora > fin)) {
+    return res.status(403).send('Esta vacante no está aceptando postulaciones');
+  }
 
   if (!req.file) {
     return res.render('postular', { vacante, error: 'Solo se aceptan archivos .pdf y .docx' });
@@ -125,6 +161,17 @@ app.post('/postular/:vid', upload.single('cv'), async (req, res) => {
       filename: req.file.filename,
       resultado,
     });
+
+    // Send email notification if enabled
+    if (vacante.notify_email && company) {
+      const { User } = require('./models');
+      const adminUser = await User.findOne({
+        where: { company_id: vacante.company_id, role: 'admin', activo: true }
+      });
+      if (adminUser) {
+        await sendNewApplicationEmail(adminUser.email, company.nombre, vacante, postulacion);
+      }
+    }
 
     return res.redirect(`/confirmacion/${postulacion.id}`);
   } catch (err) {

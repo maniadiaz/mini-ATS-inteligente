@@ -42,6 +42,7 @@ router.post('/login', async (req, res) => {
       company_id: user.company_id,
       company_nombre: user.company?.nombre || null,
       company_status: user.company?.status || null,
+      trial_ends_at: user.company?.trial_ends_at || null,
     }
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' })
@@ -93,6 +94,7 @@ router.post('/register', async (req, res) => {
       email,
       status: 'trial',
       trial_ends_at: trialEnds,
+      cv_limit: 10,
     })
 
     // Create admin user
@@ -116,6 +118,7 @@ router.post('/register', async (req, res) => {
       company_id: company.id,
       company_nombre: company.nombre,
       company_status: company.status,
+      trial_ends_at: company.trial_ends_at || null,
     }
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' })
@@ -138,6 +141,11 @@ router.post('/register', async (req, res) => {
   }
 })
 
+// GET /auth/verify — Verify token validity
+router.get('/verify', requireJWT, (req, res) => {
+  res.json({ valid: true, user: req.user })
+})
+
 // GET /auth/refresh — Refresh token with updated company status
 router.get('/refresh', requireJWT, async (req, res) => {
   try {
@@ -156,6 +164,7 @@ router.get('/refresh', requireJWT, async (req, res) => {
       company_id: user.company_id,
       company_nombre: user.company?.nombre || null,
       company_status: user.company?.status || null,
+      trial_ends_at: user.company?.trial_ends_at || null,
     }
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' })

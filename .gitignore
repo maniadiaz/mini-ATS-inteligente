@@ -1,5 +1,6 @@
 .env
 uploads/
+app/public/logos/
 node_modules/
 dist/
 *.log

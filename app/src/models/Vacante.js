@@ -42,6 +42,22 @@ const Vacante = sequelize.define('Vacante', {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
   },
+  notify_email: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+  fecha_inicio: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+  },
+  fecha_fin: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+  },
+  area: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 }, {
   tableName: 'vacantes',
   timestamps: true,

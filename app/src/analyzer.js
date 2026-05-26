@@ -16,16 +16,19 @@ function stripMarkdownFences(text) {
 }
 
 async function analyzeCV(vacante, cvText) {
-  const prompt = `Eres un sistema ATS (Applicant Tracking System) experto en reclutamiento tech.
+  const areaInfo = vacante.area ? `\n- Área profesional: ${vacante.area}` : ''
+  const prompt = `Eres un sistema ATS experto en reclutamiento y selección de personal.
 
 Analiza el siguiente CV contra los requisitos de la vacante y devuelve ÚNICAMENTE un JSON válido (sin backticks, sin markdown, sin texto adicional).
 
+La vacante puede ser de CUALQUIER industria o área profesional (tecnología, ventas, marketing, finanzas, recursos humanos, operaciones, legal, diseño, etc.). Evalúa objetivamente según los requisitos específicos de ESTA vacante, NO asumas que es un rol de tecnología.
+
 ## VACANTE
 - Puesto: ${vacante.puesto}
-- Empresa/Proyecto: ${vacante.empresa}
+- Empresa/Proyecto: ${vacante.empresa}${areaInfo}
 - Descripción: ${vacante.descripcion}
 - Años de experiencia requeridos: ${vacante.anios_exp}
-- Stack tecnológico requerido: ${vacante.stack}
+- Habilidades y conocimientos requeridos: ${vacante.stack}
 - Inglés requerido: ${vacante.ingles}
 - Español requerido: ${vacante.espanol}
 - Otros requisitos: ${vacante.otros || 'Ninguno'}
@@ -45,7 +48,7 @@ ${cvText.slice(0, 4000)}
   "match_requisitos": {
     "score": <0-100>,
     "anios_exp": { "cumple": true|false, "detalle": "..." },
-    "stack": { "cumple": true|false, "encontrados": ["..."], "faltantes": ["..."] },
+    "habilidades": { "cumple": true|false, "encontrados": ["..."], "faltantes": ["..."] },
     "ingles": { "cumple": true|false, "detalle": "..." },
     "espanol": { "cumple": true|false, "detalle": "..." },
     "otros": { "cumple": true|false, "detalle": "..." }
@@ -53,7 +56,7 @@ ${cvText.slice(0, 4000)}
   "fortalezas": ["...", "..."],
   "debilidades": ["...", "..."],
   "recomendacion": "APTO|NO APTO|REVISAR",
-  "resumen_ejecutivo": "2-3 oraciones resumiendo perfil vs vacante"
+  "resumen_ejecutivo": "2-3 oraciones resumiendo perfil del candidato vs la vacante"
 }`;
 
   try {
@@ -79,7 +82,7 @@ ${cvText.slice(0, 4000)}
       match_requisitos: {
         score: 0,
         anios_exp: { cumple: false, detalle: 'No analizado' },
-        stack: { cumple: false, encontrados: [], faltantes: [] },
+        habilidades: { cumple: false, encontrados: [], faltantes: [] },
         ingles: { cumple: false, detalle: 'No analizado' },
         espanol: { cumple: false, detalle: 'No analizado' },
         otros: { cumple: false, detalle: 'No analizado' },

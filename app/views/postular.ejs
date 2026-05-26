@@ -1,275 +1,537 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Postularse - <%= vacante.puesto %></title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #F9F6F0;
-            min-height: 100vh;
-            padding: 2rem 1rem;
-        }
-        .container {
-            max-width: 640px;
-            margin: 0 auto;
-        }
-        .header-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 2.5rem 2rem;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            margin-bottom: 1.5rem;
-        }
-        .header-card h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #1a1a2e;
-            margin-bottom: 0.5rem;
-        }
-        .header-card .empresa {
-            color: #6b7280;
-            font-size: 1rem;
-            font-weight: 500;
-        }
-        .info-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            margin-bottom: 1.5rem;
-        }
-        .info-card h3 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #1a1a2e;
-            margin-bottom: 1rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid #f3f4f6;
-        }
-        .info-card p {
-            color: #4b5563;
-            margin-bottom: 1rem;
-            line-height: 1.7;
-            white-space: pre-wrap;
-        }
-        .requisitos {
-            list-style: none;
-            display: grid;
-            gap: 0.75rem;
-        }
-        .requisitos li {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            background: #f9fafb;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            color: #374151;
-        }
-        .requisitos li .icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background: #ede9fe;
-            color: #7c3aed;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.75rem;
-            flex-shrink: 0;
-        }
-        .form-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
-        .form-card h2 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #1a1a2e;
-            margin-bottom: 1.5rem;
-        }
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: #374151;
-            margin-bottom: 0.4rem;
-        }
-        .form-group input[type="text"],
-        .form-group input[type="tel"],
-        .form-group input[type="email"] {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            font-family: inherit;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: #7c3aed;
-            box-shadow: 0 0 0 4px rgba(124,58,237,0.1);
-        }
-        .file-upload {
-            position: relative;
-            border: 2px dashed #d1d5db;
-            border-radius: 10px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: border-color 0.2s, background 0.2s;
-            cursor: pointer;
-        }
-        .file-upload:hover {
-            border-color: #7c3aed;
-            background: #faf5ff;
-        }
-        .file-upload input {
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-        .file-upload .file-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-        .file-upload .file-text {
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
-        .file-upload .file-text strong {
-            color: #7c3aed;
-        }
-        .btn-submit {
-            display: block;
-            width: 100%;
-            padding: 0.9rem;
-            background: linear-gradient(135deg, #1A3C5E 0%, #2563eb 100%);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-            margin-top: 1.5rem;
-        }
-        .btn-submit:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(26,60,94,0.4);
-        }
-        .btn-submit:active { transform: translateY(0); }
-        .btn-submit:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        .alert {
-            padding: 0.9rem 1.2rem;
-            border-radius: 10px;
-            margin-bottom: 1.25rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        .alert-error {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-        @media (max-width: 480px) {
-            body { padding: 1rem 0.5rem; }
-            .header-card, .info-card, .form-card { padding: 1.5rem; }
-            .header-card h1 { font-size: 1.4rem; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Postularse — <%= vacante.puesto %></title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #F9F6F0;
+      min-height: 100vh;
+      padding: 40px 16px 48px;
+      color: #1A1A1A;
+    }
+    .container { max-width: 640px; margin: 0 auto; }
+
+    /* ── Card base ── */
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-body { padding: 40px; }
+
+    /* ── Empresa header ── */
+    .company-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 36px 40px 28px;
+    }
+    .company-logo {
+      height: 64px;
+      max-width: 200px;
+      object-fit: contain;
+      margin-bottom: 16px;
+    }
+    .company-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      background: #1A3C5E;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+    .company-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1A1A1A;
+      margin-bottom: 4px;
+    }
+    .company-industry {
+      display: inline-block;
+      background: #EEF2FF;
+      color: #3730A3;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    .company-desc {
+      font-size: 14px;
+      color: #6B7280;
+      line-height: 1.65;
+      margin-bottom: 10px;
+      max-width: 480px;
+    }
+    .company-website {
+      font-size: 13px;
+      color: #1A3C5E;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .company-website:hover { text-decoration: underline; }
+
+    /* ── Separador ── */
+    .sep {
+      border: none;
+      border-top: 1px solid #E5E0D8;
+      margin: 0 40px;
+    }
+
+    /* ── Vacante header ── */
+    .vacante-header { padding: 24px 40px 28px; }
+    .vacante-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1A1A1A;
+      margin-bottom: 6px;
+      line-height: 1.25;
+    }
+    .vacante-empresa {
+      font-size: 15px;
+      color: #6B7280;
+      margin-bottom: 14px;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .chip {
+      background: #EEF2FF;
+      color: #3730A3;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .chip-warn {
+      background: #FFF7ED;
+      color: #C2410C;
+    }
+
+    /* ── Descripción ── */
+    .desc-section { padding: 0 40px 28px; }
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+    }
+    .desc-text {
+      font-size: 15px;
+      color: #4B5563;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .req-list {
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+    .req-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #F9FAFB;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #374151;
+    }
+    .req-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: #EEF2FF;
+      color: #3730A3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── Formulario ── */
+    .form-section { padding: 28px 40px 40px; }
+    .form-section h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1A1A1A;
+      margin-bottom: 24px;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9CA3AF;
+      pointer-events: none;
+    }
+    .input-wrap input {
+      width: 100%;
+      padding: 12px 16px 12px 42px;
+      border: 1.5px solid #E5E0D8;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      color: #1A1A1A;
+      background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input-wrap input::placeholder { color: #9CA3AF; }
+    .input-wrap input:focus {
+      outline: none;
+      border-color: #1A3C5E;
+      box-shadow: 0 0 0 3px rgba(26,60,94,0.1);
+    }
+
+    /* ── Drag & drop ── */
+    .file-drop {
+      border: 2px dashed #1A3C5E;
+      border-radius: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      position: relative;
+    }
+    .file-drop:hover, .file-drop.dragover { background: #F0F5FA; }
+    .file-drop input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .file-drop-icon { margin-bottom: 10px; color: #1A3C5E; }
+    .file-drop-text {
+      font-size: 14px;
+      color: #4B5563;
+      margin-bottom: 4px;
+    }
+    .file-drop-text strong { color: #1A3C5E; }
+    .file-drop-sub { font-size: 12px; color: #9CA3AF; }
+    .file-selected {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #1A1A1A;
+      font-weight: 500;
+      margin-top: 10px;
+    }
+    .file-selected.visible { display: flex; }
+    .check-icon { color: #4CAF50; }
+
+    /* ── Botón submit ── */
+    .btn-submit {
+      display: block;
+      width: 100%;
+      padding: 14px 32px;
+      background: #1A3C5E;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 28px;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover { background: #2196F3; }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; background: #1A3C5E; }
+
+    /* ── Alert ── */
+    .alert-error {
+      background: #FEF2F2;
+      color: #991B1B;
+      border: 1px solid #FECACA;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+
+    /* ── Estado cerrada ── */
+    .closed-card { padding: 56px 40px; text-align: center; }
+    .closed-icon-wrap {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .closed-icon-wrap.grey { background: #F3F4F6; color: #6B7280; }
+    .closed-icon-wrap.red  { background: #FEF2F2; color: #DC2626; }
+    .closed-icon-wrap.blue { background: #EFF6FF; color: #2563EB; }
+    .closed-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1A1A1A;
+      margin-bottom: 10px;
+    }
+    .closed-msg { font-size: 15px; color: #6B7280; line-height: 1.65; }
+    .closed-msg strong { color: #374151; }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: #9CA3AF;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      body { padding: 16px 12px 40px; }
+      .card-body,
+      .company-header,
+      .vacante-header,
+      .desc-section,
+      .form-section { padding-left: 20px; padding-right: 20px; }
+      .sep { margin: 0 20px; }
+      .vacante-title { font-size: 20px; }
+      .closed-card { padding: 40px 20px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header-card">
-            <h1><%= vacante.puesto %></h1>
-            <p class="empresa"><%= vacante.empresa %></p>
+<div class="container">
+
+  <%/* ── Card empresa ── */%>
+  <div class="card">
+    <div class="company-header">
+      <% if (company && company.logo_url) { %>
+        <img src="<%= company.logo_url %>" alt="<%= company.nombre %>" class="company-logo">
+      <% } else { %>
+        <div class="company-avatar">
+          <%= (company ? company.nombre : vacante.empresa).split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase() %>
         </div>
-
-        <div class="info-card">
-            <h3>Sobre el rol</h3>
-            <p><%= vacante.descripcion %></p>
-            <ul class="requisitos">
-                <li><span class="icon">EXP</span> <span><strong>Experiencia:</strong> <%= vacante.anios_exp %> años</span></li>
-                <li><span class="icon">DEV</span> <span><strong>Stack:</strong> <%= vacante.stack %></span></li>
-                <li><span class="icon">EN</span> <span><strong>Inglés:</strong> <%= vacante.ingles %></span></li>
-                <li><span class="icon">ES</span> <span><strong>Español:</strong> <%= vacante.espanol %></span></li>
-                <% if (vacante.otros) { %>
-                <li><span class="icon">+</span> <span><strong>Otros:</strong> <%= vacante.otros %></span></li>
-                <% } %>
-            </ul>
-        </div>
-
-        <div class="form-card">
-            <h2>Enviar tu postulación</h2>
-
-            <% if (error) { %>
-            <div class="alert alert-error"><%= error %></div>
-            <% } %>
-
-            <form method="post" action="/postular/<%= vacante.id %>" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="nombre">Nombre completo</label>
-                    <input type="text" id="nombre" name="nombre" required placeholder="Ej: María García López">
-                </div>
-
-                <div class="form-group">
-                    <label for="telefono">Número telefónico</label>
-                    <input type="tel" id="telefono" name="telefono" required placeholder="+52 55 1234 5678">
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Correo electrónico</label>
-                    <input type="email" id="email" name="email" required placeholder="tu@email.com">
-                </div>
-
-                <div class="form-group">
-                    <label>CV (PDF o DOCX)</label>
-                    <div class="file-upload" id="fileUploadArea">
-                        <input type="file" id="cv" name="cv" accept=".pdf,.docx" required>
-                        <div class="file-icon">📄</div>
-                        <p class="file-text" id="fileText"><strong>Haz clic aquí</strong> o arrastra tu archivo<br>PDF o DOCX (máx. 5 MB)</p>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-submit">Enviar Postulación</button>
-            </form>
-        </div>
+      <% } %>
+      <div class="company-name"><%= company ? company.nombre : vacante.empresa %></div>
+      <% if (company && company.industria) { %>
+        <span class="company-industry"><%= company.industria %></span>
+      <% } %>
+      <% if (company && company.descripcion) { %>
+        <p class="company-desc"><%= company.descripcion %></p>
+      <% } %>
+      <% if (company && company.sitio_web) { %>
+        <a href="<%= company.sitio_web %>" target="_blank" rel="noopener" class="company-website">
+          <svg style="vertical-align:-2px;margin-right:4px" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><%= company.sitio_web %>
+        </a>
+      <% } %>
     </div>
-    <script>
-        const fileInput = document.getElementById('cv');
-        const fileText = document.getElementById('fileText');
-        fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                fileText.innerHTML = '<strong>' + this.files[0].name + '</strong>';
-            }
-        });
 
-        // Disable button on submit to prevent duplicates
-        document.querySelector('form').addEventListener('submit', function() {
-            const btn = this.querySelector('.btn-submit');
-            btn.disabled = true;
-            btn.textContent = 'Enviando...';
-        });
-    </script>
+    <% if (!cerrada) { %>
+      <hr class="sep">
+      <div class="vacante-header">
+        <div class="vacante-title"><%= vacante.puesto %></div>
+        <div class="vacante-empresa"><%= vacante.empresa %></div>
+        <div class="chips">
+          <% if (vacante.area) { %><span class="chip"><%= vacante.area %></span><% } %>
+          <span class="chip"><%= vacante.anios_exp %> años exp.</span>
+          <% if (vacante.ingles && vacante.ingles !== 'No requerido') { %><span class="chip">Inglés: <%= vacante.ingles %></span><% } %>
+          <% if (vacante.espanol && vacante.espanol !== 'No requerido') { %><span class="chip">Español: <%= vacante.espanol %></span><% } %>
+          <% if (vacante.fecha_fin) { %>
+            <span class="chip chip-warn">
+              Cierra el <%= new Date(vacante.fecha_fin).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+            </span>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+
+    <% if (cerrada) { %>
+      <hr class="sep">
+      <div class="closed-card">
+        <% if (motivo === 'manual') { %>
+          <div class="closed-icon-wrap grey">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div class="closed-title">Vacante cerrada</div>
+          <p class="closed-msg">Esta vacante ya no está recibiendo postulaciones.</p>
+        <% } else if (motivo === 'no_iniciada') { %>
+          <div class="closed-icon-wrap blue">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="closed-title">Vacante aún no disponible</div>
+          <p class="closed-msg">Esta vacante abre el <strong><%= new Date(fecha_inicio).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) %></strong>.<br>Vuelve en esa fecha para postularte.</p>
+        <% } else if (motivo === 'vencida') { %>
+          <div class="closed-icon-wrap red">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="closed-title">Período de postulación cerrado</div>
+          <p class="closed-msg">El plazo para postularse cerró el <strong><%= new Date(fecha_fin).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) %></strong>.</p>
+        <% } %>
+      </div>
+    <% } else { %>
+
+      <%/* ── Descripción y requisitos ── */%>
+      <hr class="sep">
+      <div class="desc-section" style="padding-top:24px">
+        <div class="section-title">Sobre el rol</div>
+        <p class="desc-text" style="margin-bottom:20px"><%= vacante.descripcion %></p>
+        <div class="section-title">Requisitos</div>
+        <ul class="req-list">
+          <li class="req-item"><span class="req-icon">EXP</span><span><strong>Experiencia:</strong> <%= vacante.anios_exp %> años</span></li>
+          <li class="req-item"><span class="req-icon">★</span><span><strong>Habilidades:</strong> <%= vacante.stack %></span></li>
+          <% if (vacante.ingles && vacante.ingles !== 'No requerido') { %>
+          <li class="req-item"><span class="req-icon">EN</span><span><strong>Inglés:</strong> <%= vacante.ingles %></span></li>
+          <% } %>
+          <% if (vacante.espanol && vacante.espanol !== 'No requerido') { %>
+          <li class="req-item"><span class="req-icon">ES</span><span><strong>Español:</strong> <%= vacante.espanol %></span></li>
+          <% } %>
+          <% if (vacante.otros) { %>
+          <li class="req-item"><span class="req-icon">+</span><span><strong>Otros:</strong> <%= vacante.otros %></span></li>
+          <% } %>
+        </ul>
+      </div>
+
+      <%/* ── Formulario ── */%>
+      <hr class="sep" style="margin-top:24px">
+      <div class="form-section">
+        <h2>Enviar tu postulación</h2>
+
+        <% if (error) { %>
+        <div class="alert-error"><%= error %></div>
+        <% } %>
+
+        <form method="post" action="/postular/<%= vacante.id %>" enctype="multipart/form-data" id="postular-form">
+
+          <div class="form-group">
+            <label for="nombre">Nombre completo</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <input type="text" id="nombre" name="nombre" required placeholder="Ej: María García López">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="telefono">Número telefónico</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l.42-.41a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </span>
+              <input type="tel" id="telefono" name="telefono" required placeholder="+52 55 1234 5678">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input type="email" id="email" name="email" required placeholder="tu@email.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>CV (PDF o DOCX)</label>
+            <div class="file-drop" id="fileDrop">
+              <input type="file" id="cv" name="cv" accept=".pdf,.docx" required>
+              <div class="file-drop-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <p class="file-drop-text"><strong>Arrastra tu CV aquí</strong> o haz clic para seleccionar</p>
+              <p class="file-drop-sub">PDF o DOCX — máximo 5MB</p>
+              <div class="file-selected" id="fileSelected">
+                <span class="check-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+                <span id="fileName"></span>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submitBtn">Enviar postulación</button>
+        </form>
+      </div>
+    <% } %>
+  </div>
+
+  <p class="footer">Powered by <strong>ATS Pro</strong></p>
+</div>
+
+<script>
+  (function() {
+    var drop = document.getElementById('fileDrop');
+    var input = document.getElementById('cv');
+    var selected = document.getElementById('fileSelected');
+    var fileName = document.getElementById('fileName');
+    var form = document.getElementById('postular-form');
+    var btn = document.getElementById('submitBtn');
+
+    if (!drop) return;
+
+    function showFile(file) {
+      fileName.textContent = file.name;
+      selected.classList.add('visible');
+    }
+
+    input.addEventListener('change', function() {
+      if (this.files.length > 0) showFile(this.files[0]);
+    });
+
+    drop.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      drop.classList.add('dragover');
+    });
+    drop.addEventListener('dragleave', function() {
+      drop.classList.remove('dragover');
+    });
+    drop.addEventListener('drop', function(e) {
+      e.preventDefault();
+      drop.classList.remove('dragover');
+      var files = e.dataTransfer.files;
+      if (files.length > 0) {
+        var f = files[0];
+        var ext = f.name.split('.').pop().toLowerCase();
+        if (ext === 'pdf' || ext === 'docx') {
+          var dt = new DataTransfer();
+          dt.items.add(f);
+          input.files = dt.files;
+          showFile(f);
+        }
+      }
+    });
+
+    form.addEventListener('submit', function() {
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+    });
+  })();
+</script>
 </body>
 </html>

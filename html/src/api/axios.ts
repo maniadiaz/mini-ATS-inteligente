@@ -12,12 +12,17 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+const TOKEN_ERRORS = ['TOKEN_EXPIRED', 'TOKEN_INVALID', 'TOKEN_MISSING']
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('ats_token')
-      window.location.href = '/login'
+      const errorCode = error.response?.data?.error
+      if (TOKEN_ERRORS.includes(errorCode)) {
+        localStorage.removeItem('ats_token')
+        window.location.href = '/login'
+      }
     }
     if (error.response?.status === 403 && error.response?.data?.redirect) {
       window.location.href = error.response.data.redirect

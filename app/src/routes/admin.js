@@ -1,9 +1,33 @@
 const express = require('express')
+const path = require('path')
+const fs = require('fs')
+const multer = require('multer')
+const sharp = require('sharp')
 const stripe = require('../stripe')
 const { User, Company, Subscription, Plan, CvPack } = require('../models')
 const { requireJWT, requireRole } = require('../middleware/auth')
 const tenant = require('../middleware/tenant')
 const checkStatus = require('../middleware/checkStatus')
+
+const logosDir = path.join(__dirname, '..', '..', 'public', 'logos')
+
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, logosDir),
+  filename: (req, file, cb) => cb(null, `${req.company_id}-${Date.now()}.webp`),
+})
+
+const logoUpload = multer({
+  storage: logoStorage,
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp']
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true)
+    } else {
+      cb(new Error('Solo se aceptan imágenes JPG, PNG, SVG o WebP'), false)
+    }
+  },
+  limits: { fileSize: 2 * 1024 * 1024 },
+})
 
 const router = express.Router()
 
@@ -246,6 +270,68 @@ router.post('/cvpack/comprar', async (req, res) => {
   } catch (err) {
     console.error('Error comprando paquete CV:', err.message)
     res.status(500).json({ error: 'Error creando pago en Stripe' })
+  }
+})
+
+// GET /admin/empresa — Get company profile
+router.get('/empresa', async (req, res) => {
+  try {
+    const company = await Company.findByPk(req.company_id, {
+      attributes: ['id', 'nombre', 'descripcion', 'sitio_web', 'industria', 'telefono', 'logo_url']
+    })
+    if (!company) {
+      return res.status(404).json({ error: 'Empresa no encontrada' })
+    }
+    res.json(company)
+  } catch (err) {
+    console.error('Error obteniendo empresa:', err.message)
+    res.status(500).json({ error: 'Error interno' })
+  }
+})
+
+// PATCH /admin/empresa — Update company profile (with optional logo upload)
+router.patch('/empresa', logoUpload.single('logo'), async (req, res) => {
+  try {
+    const company = await Company.findByPk(req.company_id)
+    if (!company) return res.status(404).json({ error: 'Empresa no encontrada' })
+
+    const updateData = {
+      descripcion: req.body.descripcion !== undefined ? req.body.descripcion : company.descripcion,
+      sitio_web: req.body.sitio_web !== undefined ? req.body.sitio_web : company.sitio_web,
+      industria: req.body.industria !== undefined ? req.body.industria : company.industria,
+      telefono: req.body.telefono !== undefined ? req.body.telefono : company.telefono,
+    }
+
+    if (req.file) {
+      const finalPath = req.file.path
+      const tmpPath = finalPath + '_tmp'
+
+      await sharp(req.file.path)
+        .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toFile(tmpPath)
+
+      fs.renameSync(tmpPath, finalPath)
+
+      // Delete previous logo if different
+      if (company.logo_url) {
+        const oldFilename = company.logo_url.split('/logos/')[1]
+        if (oldFilename) {
+          const oldPath = path.join(logosDir, oldFilename)
+          if (fs.existsSync(oldPath) && oldPath !== finalPath) {
+            fs.unlinkSync(oldPath)
+          }
+        }
+      }
+
+      updateData.logo_url = `${process.env.BASE_URL}/logos/${path.basename(finalPath)}`
+    }
+
+    await company.update(updateData)
+    res.json({ success: true, company })
+  } catch (err) {
+    console.error('Error actualizando empresa:', err.message)
+    res.status(500).json({ error: err.message })
   }
 })
 

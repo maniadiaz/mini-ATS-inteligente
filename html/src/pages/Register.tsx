@@ -92,9 +92,12 @@ export default function Register() {
           <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 1 }}>
             Registra tu empresa y comienza a reclutar con IA
           </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 1 }}>
             <Chip label={`${trialDays} días gratis`} color="success" size="small" />
           </Box>
+          <Typography variant="caption" align="center" color="text.secondary" display="block" sx={{ mb: 3 }}>
+            Durante los {trialDays} días de prueba podrás analizar hasta <strong>10 CVs con IA</strong>
+          </Typography>
 
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 

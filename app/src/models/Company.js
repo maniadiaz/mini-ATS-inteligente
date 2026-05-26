@@ -36,13 +36,33 @@ const Company = sequelize.define('Company', {
   },
   cv_limit: {
     type: DataTypes.INTEGER,
-    defaultValue: 150,
+    defaultValue: 10,
   },
   periodo_actual: {
     type: DataTypes.DATEONLY,
     defaultValue: DataTypes.NOW,
   },
   stripe_customer_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  logo_url: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  descripcion: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  sitio_web: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  industria: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  telefono: {
     type: DataTypes.STRING,
     allowNull: true,
   },

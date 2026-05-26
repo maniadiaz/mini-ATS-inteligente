@@ -68,10 +68,13 @@ router.post('/', async (req, res) => {
       empresa: req.body.empresa,
       descripcion: req.body.descripcion,
       anios_exp: req.body.anios_exp,
-      stack: req.body.stack,
+      stack: req.body.habilidades_requeridas || req.body.stack,
       ingles: req.body.ingles,
       espanol: req.body.espanol,
       otros: req.body.otros || '',
+      area: req.body.area || null,
+      fecha_inicio: req.body.fecha_inicio || null,
+      fecha_fin: req.body.fecha_fin || null,
     })
     res.json(vacante)
   } catch (err) {
@@ -94,11 +97,14 @@ router.put('/:vid', async (req, res) => {
       empresa: req.body.empresa ?? vacante.empresa,
       descripcion: req.body.descripcion ?? vacante.descripcion,
       anios_exp: req.body.anios_exp ?? vacante.anios_exp,
-      stack: req.body.stack ?? vacante.stack,
+      stack: req.body.habilidades_requeridas ?? req.body.stack ?? vacante.stack,
       ingles: req.body.ingles ?? vacante.ingles,
       espanol: req.body.espanol ?? vacante.espanol,
       otros: req.body.otros ?? vacante.otros,
       activa: req.body.activa !== undefined ? req.body.activa : vacante.activa,
+      area: req.body.area !== undefined ? req.body.area : vacante.area,
+      fecha_inicio: req.body.fecha_inicio !== undefined ? req.body.fecha_inicio : vacante.fecha_inicio,
+      fecha_fin: req.body.fecha_fin !== undefined ? req.body.fecha_fin : vacante.fecha_fin,
     })
 
     res.json(vacante)
@@ -138,6 +144,25 @@ router.get('/:vid/dashboard', async (req, res) => {
     res.json({ vacante, postulaciones: posts })
   } catch (err) {
     console.error('Error en dashboard:', err.message)
+    res.status(500).json({ error: 'Error interno' })
+  }
+})
+
+// PATCH /vacante/:vid/notify — toggle email notification
+router.patch('/:vid/notify', async (req, res) => {
+  try {
+    const where = { id: req.params.vid }
+    if (req.company_id) where.company_id = req.company_id
+
+    const vacante = await Vacante.findOne({ where })
+    if (!vacante) return res.status(404).json({ error: 'Vacante no encontrada' })
+
+    const notify_email = req.body.notify_email !== undefined ? req.body.notify_email : vacante.notify_email
+    await vacante.update({ notify_email })
+
+    res.json({ notify_email: vacante.notify_email })
+  } catch (err) {
+    console.error('Error actualizando notificación:', err.message)
     res.status(500).json({ error: 'Error interno' })
   }
 })

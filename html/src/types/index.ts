@@ -69,12 +69,25 @@ export interface Vacante {
   espanol: string
   otros: string
   activa: boolean
+  notify_email: boolean
+  fecha_inicio?: string | null
+  fecha_fin?: string | null
+  area?: string | null
+  habilidades_requeridas?: string | null
   postulaciones: { id: string }[] | string[]
+  postulantes_count?: number
   createdAt?: string
   updatedAt?: string
 }
 
+/** @deprecated Use HabilidadesMatch */
 export interface StackMatch {
+  cumple: boolean
+  encontrados: string[]
+  faltantes: string[]
+}
+
+export interface HabilidadesMatch {
   cumple: boolean
   encontrados: string[]
   faltantes: string[]
@@ -96,7 +109,9 @@ export interface ResultadoIA {
   match_requisitos: {
     score: number
     anios_exp: RequisitoSimple
-    stack: StackMatch
+    habilidades: HabilidadesMatch
+    /** @deprecated use habilidades */
+    stack?: StackMatch
     ingles: RequisitoSimple
     espanol: RequisitoSimple
     otros: RequisitoSimple

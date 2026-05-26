@@ -42,7 +42,7 @@ router.post('/stripe', async (req, res) => {
 
         const company = await Company.findByPk(companyId)
         if (company) {
-          await company.update({ status: 'active' })
+          await company.update({ status: 'active', cv_limit: 150 })
           await sendPaymentConfirmedEmail(company)
         }
         console.log('Subscription activated for company:', companyId)
@@ -82,7 +82,7 @@ router.post('/stripe', async (req, res) => {
 
         const company = await Company.findByPk(companyId)
         if (company) {
-          await company.update({ status: 'active' })
+          await company.update({ status: 'active', cv_limit: 150 })
           await sendPaymentConfirmedEmail(company)
         }
         console.log('Subscription renewed for company:', companyId)
