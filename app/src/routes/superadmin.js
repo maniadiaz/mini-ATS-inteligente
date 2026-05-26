@@ -36,6 +36,12 @@ router.get('/dashboard', async (req, res) => {
         break
     }
 
+    // Company stats
+    const totalCompanies = await Company.count()
+    const trialCompanies = await Company.count({ where: { status: 'trial' } })
+    const activeCompanies = await Company.count({ where: { status: 'active' } })
+    const cancelledCompanies = await Company.count({ where: { status: 'cancelled' } })
+
     // Total subscriptions
     const totalSubscriptions = await Subscription.count()
     
@@ -56,6 +62,24 @@ router.get('/dashboard', async (req, res) => {
     const totalRevenue = 
       allSubs.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0) +
       allPacks.reduce((sum, p) => sum + parseFloat(p.monto || 0), 0)
+
+    // MRR (Monthly Recurring Revenue) - only active subscriptions
+    const mrr = allSubs.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0)
+
+    // Average revenue per customer
+    const avgRevenuePerCustomer = activeCompanies > 0 
+      ? Math.round(totalRevenue / activeCompanies) 
+      : 0
+
+    // Conversion rate (trial → active)
+    const conversionRate = totalCompanies > 0
+      ? (activeCompanies / totalCompanies) * 100
+      : 0
+
+    // Churn rate (cancelled / total that had subscription)
+    const churnRate = totalSubscriptions > 0
+      ? (cancelledCompanies / totalSubscriptions) * 100
+      : 0
 
     // Period revenue
     const periodSubs = await Subscription.findAll({
@@ -124,6 +148,12 @@ router.get('/dashboard', async (req, res) => {
       activeSubscriptions,
       totalRevenue: Math.round(totalRevenue),
       periodRevenue: Math.round(periodRevenue),
+      mrr: Math.round(mrr),
+      avgRevenuePerCustomer,
+      conversionRate,
+      churnRate,
+      totalCompanies,
+      trialCompanies,
       chartData
     })
   } catch (err) {
