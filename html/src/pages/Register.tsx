@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import {
   Box, Card, CardContent, TextField, Button, Typography,
-  Alert, CircularProgress, Chip,
+  Alert, CircularProgress, Chip, IconButton, InputAdornment,
 } from '@mui/material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 
@@ -15,6 +16,9 @@ export default function Register() {
     password: '',
     nombre_admin: '',
   })
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
@@ -22,9 +26,23 @@ export default function Register() {
 
   const trialDays = import.meta.env.VITE_TRIAL_DAYS || '14'
 
+  const passwordsMatch = form.password === confirmPassword
+  const showMismatch = confirmPassword.length > 0 && !passwordsMatch
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (!passwordsMatch) {
+      setError('Las contraseñas no coinciden')
+      return
+    }
+
+    if (form.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -37,6 +55,23 @@ export default function Register() {
       setLoading(false)
     }
   }
+
+  const passwordAdornment = (show: boolean, toggle: () => void) => ({
+    input: {
+      endAdornment: (
+        <InputAdornment position="end">
+          <IconButton
+            onClick={toggle}
+            edge="end"
+            size="small"
+            aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+          >
+            {show ? <VisibilityOff /> : <Visibility />}
+          </IconButton>
+        </InputAdornment>
+      ),
+    },
+  })
 
   return (
     <Box
@@ -83,10 +118,23 @@ export default function Register() {
               margin="normal"
             />
             <TextField
-              fullWidth label="Contraseña" required type="password"
+              fullWidth label="Contraseña" required
+              type={showPassword ? 'text' : 'password'}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               margin="normal"
+              helperText="Mínimo 6 caracteres"
+              slotProps={passwordAdornment(showPassword, () => setShowPassword(!showPassword))}
+            />
+            <TextField
+              fullWidth label="Confirmar contraseña" required
+              type={showConfirm ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              margin="normal"
+              error={showMismatch}
+              helperText={showMismatch ? 'Las contraseñas no coinciden' : ''}
+              slotProps={passwordAdornment(showConfirm, () => setShowConfirm(!showConfirm))}
             />
             <TextField
               fullWidth label="Nombre del administrador" required
@@ -96,7 +144,7 @@ export default function Register() {
             />
             <Button
               fullWidth type="submit" variant="contained" size="large"
-              disabled={loading} sx={{ mt: 3 }}
+              disabled={loading || showMismatch} sx={{ mt: 3 }}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Crear cuenta'}
             </Button>

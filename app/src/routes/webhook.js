@@ -35,79 +35,103 @@ router.post('/mercadopago', async (req, res) => {
       }
     }
 
-    const { type, data } = req.body || {}
+    const { type, action, data } = req.body || {}
+    console.log('Webhook MP recibido:', JSON.stringify({ type, action, data_id: data?.id }))
 
     if (type === 'subscription_preapproval' && data?.id) {
-      const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
-      const preApproval = new PreApproval(client)
+      try {
+        const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
+        const preApproval = new PreApproval(client)
 
-      const mpSub = await preApproval.get({ id: data.id })
+        const mpSub = await preApproval.get({ id: data.id })
+        console.log('Webhook MP preapproval:', data.id, 'status:', mpSub.status, 'payer:', mpSub.payer_email)
 
-      // Find subscription in our DB
-      const sub = await Subscription.findOne({
-        where: { mp_subscription_id: data.id },
-        include: [{ model: Company, as: 'company' }],
-      })
-
-      if (!sub) {
-        console.warn(`Webhook MP: suscripción no encontrada ${data.id}`)
-        return res.sendStatus(200)
-      }
-
-      if (mpSub.status === 'authorized') {
-        await sub.update({
-          status: 'authorized',
-          current_period_end: mpSub.next_payment_date || null,
+        // Find subscription by mp_subscription_id first
+        let sub = await Subscription.findOne({
+          where: { mp_subscription_id: data.id },
+          include: [{ model: Company, as: 'company' }],
         })
-        if (sub.company) {
-          await sub.company.update({ status: 'active' })
-          await sendPaymentConfirmedEmail(sub.company)
+
+        // If not found, try to match by payer_email + mp_plan_id (checkout URL flow)
+        if (!sub && mpSub.payer_email && mpSub.preapproval_plan_id) {
+          const company = await Company.findOne({ where: { email: mpSub.payer_email } })
+          if (company) {
+            sub = await Subscription.findOne({
+              where: { company_id: company.id, mp_plan_id: mpSub.preapproval_plan_id },
+              include: [{ model: Company, as: 'company' }],
+            })
+            if (sub) {
+              await sub.update({ mp_subscription_id: data.id })
+              console.log('Webhook MP: suscripción vinculada por email:', mpSub.payer_email)
+            }
+          }
         }
-      } else if (mpSub.status === 'paused' || mpSub.status === 'cancelled') {
-        await sub.update({ status: mpSub.status })
-        if (sub.company) {
-          await sub.company.update({ status: 'suspended' })
-          await sendSuspensionEmail(sub.company, 'payment_failed')
+
+        if (!sub) {
+          console.warn(`Webhook MP: suscripción no encontrada ${data.id}`)
+        } else if (mpSub.status === 'authorized') {
+          await sub.update({
+            status: 'authorized',
+            current_period_end: mpSub.next_payment_date || null,
+          })
+          if (sub.company) {
+            await sub.company.update({ status: 'active' })
+            await sendPaymentConfirmedEmail(sub.company)
+          }
+          console.log('Webhook MP: suscripción autorizada para empresa:', sub.company?.nombre)
+        } else if (mpSub.status === 'paused' || mpSub.status === 'cancelled') {
+          await sub.update({ status: mpSub.status })
+          if (sub.company) {
+            await sub.company.update({ status: 'suspended' })
+            await sendSuspensionEmail(sub.company, 'payment_failed')
+          }
+        } else {
+          await sub.update({ status: mpSub.status === 'pending' ? 'pending' : sub.status })
         }
-      } else {
-        await sub.update({ status: mpSub.status === 'pending' ? 'pending' : sub.status })
+      } catch (subErr) {
+        console.warn('Webhook MP: error procesando suscripción:', data.id, subErr.message)
       }
     }
 
     // Handle payment (CV pack checkout)
     if (type === 'payment' && data?.id) {
-      const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
-      const mpPayment = new MpPayment(client)
+      try {
+        const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
+        const mpPayment = new MpPayment(client)
 
-      const paymentInfo = await mpPayment.get({ id: data.id })
-      const externalRef = paymentInfo.external_reference
+        const paymentInfo = await mpPayment.get({ id: data.id })
+        const externalRef = paymentInfo.external_reference
 
-      if (externalRef) {
-        // Find pending CvPack for this company
-        const pack = await CvPack.findOne({
-          where: { company_id: externalRef, status: 'pending' },
-          order: [['createdAt', 'DESC']],
-        })
+        if (externalRef) {
+          // Find pending CvPack for this company
+          const pack = await CvPack.findOne({
+            where: { company_id: externalRef, status: 'pending' },
+            order: [['createdAt', 'DESC']],
+          })
 
-        if (pack) {
-          if (paymentInfo.status === 'approved') {
-            await pack.update({ mp_payment_id: String(data.id), status: 'approved' })
-            const company = await Company.findByPk(externalRef)
-            if (company) {
-              await company.increment('cv_extras', { by: pack.cantidad })
-              await sendCvPackConfirmedEmail(company, pack.cantidad)
+          if (pack) {
+            if (paymentInfo.status === 'approved') {
+              await pack.update({ mp_payment_id: String(data.id), status: 'approved' })
+              const company = await Company.findByPk(externalRef)
+              if (company) {
+                await company.increment('cv_extras', { by: pack.cantidad })
+                await sendCvPackConfirmedEmail(company, pack.cantidad)
+              }
+            } else if (paymentInfo.status === 'rejected') {
+              await pack.update({ mp_payment_id: String(data.id), status: 'rejected' })
             }
-          } else if (paymentInfo.status === 'rejected') {
-            await pack.update({ mp_payment_id: String(data.id), status: 'rejected' })
           }
         }
+      } catch (payErr) {
+        console.warn('Webhook MP: pago no encontrado o error consultando:', data.id, payErr.message)
       }
     }
 
     res.sendStatus(200)
   } catch (err) {
     console.error('Error en webhook MP:', err.message)
-    res.sendStatus(500)
+    // Always respond 200 to avoid MP retries on non-critical errors
+    res.sendStatus(200)
   }
 })
 

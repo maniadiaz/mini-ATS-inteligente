@@ -1,5 +1,5 @@
 const express = require('express')
-const { MercadoPagoConfig, PreApproval, Preference } = require('mercadopago')
+const { MercadoPagoConfig, Preference } = require('mercadopago')
 const { User, Company, Subscription, Plan, CvPack } = require('../models')
 const { requireJWT, requireRole } = require('../middleware/auth')
 const tenant = require('../middleware/tenant')
@@ -158,28 +158,18 @@ router.post('/suscripcion/iniciar', async (req, res) => {
     const company = await Company.findByPk(req.company_id)
     if (!company) return res.status(404).json({ error: 'Empresa no encontrada' })
 
-    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
-    const preApproval = new PreApproval(client)
-
-    const result = await preApproval.create({
-      body: {
-        preapproval_plan_id: plan.mp_plan_id,
-        payer_email: company.email,
-        back_url: `${process.env.BASE_URL}/admin/suscripcion`,
-        reason: plan.nombre,
-      },
-    })
-
-    // Save subscription record
+    // Save pending subscription record
     await Subscription.upsert({
       company_id: company.id,
-      mp_subscription_id: result.id,
       mp_plan_id: plan.mp_plan_id,
       status: 'pending',
       amount: plan.precio,
     })
 
-    res.json({ init_point: result.init_point })
+    // Redirect user to MP checkout for the plan (MP handles card collection)
+    const init_point = `https://www.mercadopago.com.mx/subscriptions/checkout?preapproval_plan_id=${plan.mp_plan_id}&payer_email=${encodeURIComponent(company.email)}`
+
+    res.json({ init_point })
   } catch (err) {
     console.error('Error iniciando suscripción:', err.message)
     res.status(500).json({ error: 'Error creando suscripción en Mercado Pago' })
