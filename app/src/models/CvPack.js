@@ -11,8 +11,13 @@ const CvPack = sequelize.define('CvPack', {
     type: DataTypes.UUID,
     allowNull: false,
   },
-  mp_payment_id: {
+  stripe_payment_intent_id: {
     type: DataTypes.STRING,
+    allowNull: true,
+  },
+  stripe_session_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   cantidad: {
     type: DataTypes.INTEGER,

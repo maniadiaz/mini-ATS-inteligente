@@ -29,13 +29,27 @@ export default function AdminSuscripcion() {
 
   useEffect(() => {
     loadData()
+    
+    // Handle subscription status
+    const subStatus = searchParams.get('sub')
+    if (subStatus === 'success') {
+      setSnackbar('¡Suscripción activada exitosamente!')
+      searchParams.delete('sub')
+      setSearchParams(searchParams, { replace: true })
+    } else if (subStatus === 'cancelled') {
+      setError('Pago cancelado')
+      searchParams.delete('sub')
+      setSearchParams(searchParams, { replace: true })
+    }
+    
+    // Handle CV pack status
     const packStatus = searchParams.get('pack')
     if (packStatus === 'success') {
       setSnackbar('¡Paquete de CVs activado exitosamente!')
       searchParams.delete('pack')
       setSearchParams(searchParams, { replace: true })
-    } else if (packStatus === 'failure') {
-      setError('El pago del paquete fue rechazado. Intenta de nuevo.')
+    } else if (packStatus === 'cancelled') {
+      setError('Compra cancelada')
       searchParams.delete('pack')
       setSearchParams(searchParams, { replace: true })
     }
@@ -54,7 +68,7 @@ export default function AdminSuscripcion() {
     setError('')
     try {
       const res = await api.post('/admin/suscripcion/iniciar')
-      window.location.href = res.data.init_point
+      window.location.href = res.data.url  // Stripe Checkout URL
     } catch (err: any) {
       setError(err.response?.data?.error || 'Error al iniciar suscripción')
       setActivating(false)
@@ -66,7 +80,7 @@ export default function AdminSuscripcion() {
     setError('')
     try {
       const res = await api.post('/admin/cvpack/comprar')
-      window.location.href = res.data.init_point
+      window.location.href = res.data.url  // Stripe Checkout URL
     } catch (err: any) {
       setError(err.response?.data?.error || 'Error al crear pago')
       setBuyingPack(false)

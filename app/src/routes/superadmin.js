@@ -1,5 +1,5 @@
 const express = require('express')
-const { MercadoPagoConfig, PreApprovalPlan } = require('mercadopago')
+const stripe = require('../stripe')
 const { Company, User, Subscription, Vacante, Plan } = require('../models')
 const { requireJWT, requireRole } = require('../middleware/auth')
 
@@ -136,33 +136,31 @@ router.patch('/plan', async (req, res) => {
   }
 })
 
-// POST /superadmin/plan/sync-mp
-router.post('/plan/sync-mp', async (req, res) => {
+// POST /superadmin/plan/sync-stripe
+router.post('/plan/sync-stripe', async (req, res) => {
   try {
+    if (!process.env.STRIPE_PRICE_ID) {
+      return res.status(400).json({ error: 'STRIPE_PRICE_ID no configurado en .env' })
+    }
+
+    // Verify that the price exists in Stripe
+    const price = await stripe.prices.retrieve(process.env.STRIPE_PRICE_ID)
+    
     const plan = await Plan.findOne({ where: { activo: true } })
-    if (!plan) return res.status(404).json({ error: 'Plan no encontrado' })
+    if (plan) {
+      await plan.update({ stripe_price_id: process.env.STRIPE_PRICE_ID })
+    }
 
-    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
-    const preApprovalPlan = new PreApprovalPlan(client)
-
-    const result = await preApprovalPlan.create({
-      body: {
-        reason: plan.nombre,
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: 'months',
-          transaction_amount: parseFloat(plan.precio),
-          currency_id: 'MXN',
-        },
-        back_url: `${process.env.BASE_URL}/admin/suscripcion`,
-      },
+    res.json({ 
+      price_id: price.id,
+      amount: price.unit_amount / 100,
+      currency: price.currency.toUpperCase(),
+      interval: price.recurring?.interval || 'one-time',
+      message: 'Price ID verificado en Stripe'
     })
-
-    await plan.update({ mp_plan_id: result.id })
-    res.json({ mp_plan_id: result.id, message: 'Plan sincronizado con Mercado Pago' })
   } catch (err) {
-    console.error('Error sincronizando con MP:', err.message)
-    res.status(500).json({ error: 'Error sincronizando con Mercado Pago' })
+    console.error('Error verificando con Stripe:', err.message)
+    res.status(500).json({ error: 'Error verificando con Stripe: ' + err.message })
   }
 })
 

@@ -1,5 +1,5 @@
 const express = require('express')
-const { MercadoPagoConfig, PreApproval, Preference } = require('mercadopago')
+const stripe = require('../stripe')
 const { User, Company, Subscription, Plan, CvPack } = require('../models')
 const { requireJWT, requireRole } = require('../middleware/auth')
 const tenant = require('../middleware/tenant')
@@ -150,45 +150,51 @@ router.get('/suscripcion', async (req, res) => {
 // POST /admin/suscripcion/iniciar
 router.post('/suscripcion/iniciar', async (req, res) => {
   try {
-    const plan = await Plan.findOne({ where: { activo: true } })
-    if (!plan || !plan.mp_plan_id) {
-      return res.status(400).json({ error: 'Plan no configurado en Mercado Pago' })
-    }
-
     const company = await Company.findByPk(req.company_id)
     if (!company) return res.status(404).json({ error: 'Empresa no encontrada' })
 
-    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
-    const preApproval = new PreApproval(client)
+    // Get or create Stripe Customer
+    let customerId = company.stripe_customer_id
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: company.email,
+        name: company.nombre,
+        metadata: { company_id: company.id }
+      })
+      customerId = customer.id
+      await company.update({ stripe_customer_id: customerId })
+    }
 
-    const result = await preApproval.create({
-      body: {
-        back_url: `${process.env.BASE_URL}/admin/suscripcion`,
-        reason: plan.nombre,
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: 'months',
-          transaction_amount: parseFloat(plan.precio),
-          currency_id: 'MXN',
-        },
-        payer_email: company.email,
-        status: 'pending',
-      },
+    // Create Stripe Checkout Session for subscription
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{
+        price: process.env.STRIPE_PRICE_ID,
+        quantity: 1
+      }],
+      success_url: `${process.env.BASE_URL}/admin/suscripcion?sub=success`,
+      cancel_url: `${process.env.BASE_URL}/admin/suscripcion?sub=cancelled`,
+      metadata: { company_id: company.id },
+      subscription_data: {
+        metadata: { company_id: company.id }
+      }
     })
 
-    // Save subscription record with MP ID
+    // Save pending subscription
     await Subscription.upsert({
       company_id: company.id,
-      mp_subscription_id: result.id,
-      mp_plan_id: plan.mp_plan_id,
+      stripe_customer_id: customerId,
+      stripe_price_id: process.env.STRIPE_PRICE_ID,
       status: 'pending',
-      amount: plan.precio,
+      amount: 999
     })
 
-    res.json({ init_point: result.init_point })
+    res.json({ url: session.url })
   } catch (err) {
     console.error('Error iniciando suscripción:', err.message)
-    res.status(500).json({ error: 'Error creando suscripción en Mercado Pago' })
+    res.status(500).json({ error: 'Error creando suscripción en Stripe' })
   }
 })
 
@@ -201,41 +207,45 @@ router.post('/cvpack/comprar', async (req, res) => {
     const cantidad = parseInt(process.env.CV_PACK_QUANTITY) || 50
     const precio = parseFloat(process.env.CV_PACK_PRICE) || 299
 
-    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
-    const preference = new Preference(client)
+    // Reuse or create Stripe Customer
+    let customerId = company.stripe_customer_id
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: company.email,
+        name: company.nombre,
+        metadata: { company_id: company.id }
+      })
+      customerId = customer.id
+      await company.update({ stripe_customer_id: customerId })
+    }
 
-    const result = await preference.create({
-      body: {
-        items: [{
-          title: `Paquete ${cantidad} CVs adicionales — ATS Pro`,
-          quantity: 1,
-          unit_price: precio,
-          currency_id: 'MXN',
-        }],
-        back_urls: {
-          success: `${process.env.BASE_URL}/admin/suscripcion?pack=success`,
-          failure: `${process.env.BASE_URL}/admin/suscripcion?pack=failure`,
-          pending: `${process.env.BASE_URL}/admin/suscripcion?pack=pending`,
-        },
-        auto_return: 'approved',
-        external_reference: company.id,
-        notification_url: `${process.env.BASE_URL}/webhook/mercadopago`,
-      },
+    // Create Stripe Checkout Session for one-time payment
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [{
+        price: process.env.STRIPE_PACK_PRICE_ID,
+        quantity: 1
+      }],
+      success_url: `${process.env.BASE_URL}/admin/suscripcion?pack=success`,
+      cancel_url: `${process.env.BASE_URL}/admin/suscripcion?pack=cancelled`,
+      metadata: { company_id: company.id, type: 'cv_pack' }
     })
 
     // Save CvPack record
     await CvPack.create({
       company_id: company.id,
-      mp_payment_id: result.id,
+      stripe_session_id: session.id,
       cantidad,
       monto: precio,
       status: 'pending',
     })
 
-    res.json({ init_point: result.init_point })
+    res.json({ url: session.url })
   } catch (err) {
     console.error('Error comprando paquete CV:', err.message)
-    res.status(500).json({ error: 'Error creando pago en Mercado Pago' })
+    res.status(500).json({ error: 'Error creando pago en Stripe' })
   }
 })
 

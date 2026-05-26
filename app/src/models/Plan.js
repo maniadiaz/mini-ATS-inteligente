@@ -23,7 +23,7 @@ const Plan = sequelize.define('Plan', {
     type: DataTypes.INTEGER,
     defaultValue: 150,
   },
-  mp_plan_id: {
+  stripe_price_id: {
     type: DataTypes.STRING,
     allowNull: true,
   },

@@ -45,11 +45,11 @@ export default function SuperAdminPlan() {
     setSyncing(true)
     setError('')
     try {
-      const res = await api.post('/superadmin/plan/sync-mp')
-      setPlan((prev) => prev ? { ...prev, mp_plan_id: res.data.mp_plan_id } : prev)
-      setSnackbar('Plan sincronizado con Mercado Pago')
+      const res = await api.post('/superadmin/plan/sync-stripe')
+      setPlan((prev) => prev ? { ...prev, stripe_price_id: res.data.price_id } : prev)
+      setSnackbar(`Stripe verificado: ${res.data.amount} ${res.data.currency} / ${res.data.interval}`)
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Error sincronizando con MP')
+      setError(err.response?.data?.error || 'Error verificando con Stripe')
     } finally { setSyncing(false) }
   }
 
@@ -82,17 +82,17 @@ export default function SuperAdminPlan() {
 
       <Card>
         <CardContent>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Mercado Pago</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Stripe</Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Typography variant="body2" color="text.secondary">Plan ID:</Typography>
-            {plan.mp_plan_id ? (
-              <Chip label={plan.mp_plan_id} size="small" color="success" />
+            <Typography variant="body2" color="text.secondary">Price ID:</Typography>
+            {plan.stripe_price_id ? (
+              <Chip label={plan.stripe_price_id} size="small" color="success" />
             ) : (
-              <Chip label="No sincronizado" size="small" color="warning" />
+              <Chip label="No configurado" size="small" color="warning" />
             )}
           </Box>
           <Button variant="outlined" startIcon={<Sync />} onClick={handleSync} disabled={syncing}>
-            {syncing ? <CircularProgress size={20} color="inherit" /> : 'Sincronizar con Mercado Pago'}
+            {syncing ? <CircularProgress size={20} color="inherit" /> : 'Verificar con Stripe'}
           </Button>
         </CardContent>
       </Card>

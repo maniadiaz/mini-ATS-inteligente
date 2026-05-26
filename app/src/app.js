@@ -27,6 +27,10 @@ const PORT = process.env.PORT || 3105;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// IMPORTANT: Stripe webhook needs raw body BEFORE express.json()
+app.use('/webhook/stripe', express.raw({ type: 'application/json' }), webhookRouter);
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -141,7 +145,7 @@ app.use('/vacante', vacantesRouter);
 app.use('/cv', cvRouter);
 app.use('/admin', adminRouter);
 app.use('/superadmin', superadminRouter);
-app.use('/webhook', webhookRouter);
+// Webhook route already registered above with raw body parser
 
 // --------------- Error handler for multer ---------------
 app.use((err, req, res, next) => {

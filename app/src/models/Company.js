@@ -42,6 +42,10 @@ const Company = sequelize.define('Company', {
     type: DataTypes.DATEONLY,
     defaultValue: DataTypes.NOW,
   },
+  stripe_customer_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 }, {
   tableName: 'companies',
   timestamps: true,

@@ -29,14 +29,15 @@ export interface PlanInfo {
   precio: number
   trial_days: number
   cv_limit: number
-  mp_plan_id?: string | null
+  stripe_price_id?: string | null
   activo?: boolean
 }
 
 export interface CvPack {
   id: string
   company_id: string
-  mp_payment_id: string
+  stripe_payment_intent_id?: string
+  stripe_session_id?: string
   cantidad: number
   monto: number
   status: 'pending' | 'approved' | 'rejected'
@@ -46,8 +47,9 @@ export interface CvPack {
 export interface SubscriptionInfo {
   id: string
   company_id: string
-  mp_subscription_id?: string
-  mp_plan_id?: string
+  stripe_subscription_id?: string
+  stripe_customer_id?: string
+  stripe_price_id?: string
   status: 'authorized' | 'paused' | 'cancelled' | 'pending'
   current_period_end?: string
   amount?: number

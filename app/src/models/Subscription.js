@@ -11,11 +11,15 @@ const Subscription = sequelize.define('Subscription', {
     type: DataTypes.UUID,
     allowNull: false,
   },
-  mp_subscription_id: {
+  stripe_subscription_id: {
     type: DataTypes.STRING,
     allowNull: true,
   },
-  mp_plan_id: {
+  stripe_customer_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  stripe_price_id: {
     type: DataTypes.STRING,
     allowNull: true,
   },
