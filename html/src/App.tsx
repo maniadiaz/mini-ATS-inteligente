@@ -10,6 +10,7 @@ import NuevaVacante from './pages/NuevaVacante'
 import VacanteDashboard from './pages/VacanteDashboard'
 import AdminUsuarios from './pages/admin/AdminUsuarios'
 import AdminSuscripcion from './pages/admin/AdminSuscripcion'
+import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard'
 import SuperAdminEmpresas from './pages/superadmin/SuperAdminEmpresas'
 import SuperAdminPagos from './pages/superadmin/SuperAdminPagos'
 import SuperAdminPlan from './pages/superadmin/SuperAdminPlan'
@@ -45,6 +46,7 @@ export default function App() {
         {/* Superadmin routes */}
         <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
           <Route element={<Layout />}>
+            <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
             <Route path="/superadmin/empresas" element={<SuperAdminEmpresas />} />
             <Route path="/superadmin/pagos" element={<SuperAdminPagos />} />
             <Route path="/superadmin/plan" element={<SuperAdminPlan />} />

@@ -5,7 +5,7 @@ import {
   Drawer, List, ListItemButton, ListItemIcon, ListItemText, Alert,
 } from '@mui/material'
 import {
-  People, CreditCard, Business, Payment, Settings, Work,
+  People, CreditCard, Business, Payment, Settings, Work, Dashboard as DashboardIcon,
 } from '@mui/icons-material'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
@@ -34,6 +34,7 @@ export default function Layout() {
   const navItems = (() => {
     if (isSuperAdmin) {
       return [
+        { label: 'Dashboard', icon: <DashboardIcon />, path: '/superadmin/dashboard' },
         { label: 'Empresas', icon: <Business />, path: '/superadmin/empresas' },
         { label: 'Pagos', icon: <Payment />, path: '/superadmin/pagos' },
         { label: 'Plan', icon: <Settings />, path: '/superadmin/plan' },

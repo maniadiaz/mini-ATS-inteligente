@@ -1,12 +1,152 @@
 const express = require('express')
+const { Op } = require('sequelize')
 const stripe = require('../stripe')
-const { Company, User, Subscription, Vacante, Plan } = require('../models')
+const { Company, User, Subscription, Vacante, Plan, CvPack } = require('../models')
 const { requireJWT, requireRole } = require('../middleware/auth')
 
 const router = express.Router()
 
 // All superadmin routes
 router.use(requireJWT, requireRole('superadmin'))
+
+// GET /superadmin/dashboard
+router.get('/dashboard', async (req, res) => {
+  try {
+    const { period = 'week' } = req.query
+    
+    // Calculate date range
+    const now = new Date()
+    let startDate = new Date()
+    let groupFormat = '%Y-%m-%d'
+    
+    switch (period) {
+      case 'day':
+        startDate.setHours(0, 0, 0, 0)
+        groupFormat = '%H:00'
+        break
+      case 'week':
+        startDate.setDate(now.getDate() - 7)
+        break
+      case 'month':
+        startDate.setDate(1)
+        break
+      case 'year':
+        startDate.setMonth(0, 1)
+        groupFormat = '%Y-%m'
+        break
+    }
+
+    // Total subscriptions
+    const totalSubscriptions = await Subscription.count()
+    
+    // Active subscriptions
+    const activeSubscriptions = await Subscription.count({
+      where: { status: 'authorized' }
+    })
+
+    // Total revenue (all time)
+    const allSubs = await Subscription.findAll({
+      where: { status: 'authorized' },
+      attributes: ['amount']
+    })
+    const allPacks = await CvPack.findAll({
+      where: { status: 'approved' },
+      attributes: ['monto']
+    })
+    const totalRevenue = 
+      allSubs.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0) +
+      allPacks.reduce((sum, p) => sum + parseFloat(p.monto || 0), 0)
+
+    // Period revenue
+    const periodSubs = await Subscription.findAll({
+      where: { 
+        status: 'authorized',
+        createdAt: { [Op.gte]: startDate }
+      },
+      attributes: ['amount']
+    })
+    const periodPacks = await CvPack.findAll({
+      where: { 
+        status: 'approved',
+        createdAt: { [Op.gte]: startDate }
+      },
+      attributes: ['monto']
+    })
+    const periodRevenue = 
+      periodSubs.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0) +
+      periodPacks.reduce((sum, p) => sum + parseFloat(p.monto || 0), 0)
+
+    // Chart data - group by date
+    const subscriptions = await Subscription.findAll({
+      where: { createdAt: { [Op.gte]: startDate } },
+      attributes: ['createdAt', 'amount', 'status'],
+      order: [['createdAt', 'ASC']]
+    })
+
+    const cvPacks = await CvPack.findAll({
+      where: { createdAt: { [Op.gte]: startDate } },
+      attributes: ['createdAt', 'monto', 'status'],
+      order: [['createdAt', 'ASC']]
+    })
+
+    // Group data by date
+    const dataMap = new Map()
+    
+    subscriptions.forEach(sub => {
+      const date = formatDate(sub.createdAt, period)
+      if (!dataMap.has(date)) {
+        dataMap.set(date, { date, subscriptions: 0, revenue: 0 })
+      }
+      const data = dataMap.get(date)
+      data.subscriptions++
+      if (sub.status === 'authorized') {
+        data.revenue += parseFloat(sub.amount || 0)
+      }
+    })
+
+    cvPacks.forEach(pack => {
+      const date = formatDate(pack.createdAt, period)
+      if (!dataMap.has(date)) {
+        dataMap.set(date, { date, subscriptions: 0, revenue: 0 })
+      }
+      const data = dataMap.get(date)
+      if (pack.status === 'approved') {
+        data.revenue += parseFloat(pack.monto || 0)
+      }
+    })
+
+    const chartData = Array.from(dataMap.values()).sort((a, b) => 
+      a.date.localeCompare(b.date)
+    )
+
+    res.json({
+      totalSubscriptions,
+      activeSubscriptions,
+      totalRevenue: Math.round(totalRevenue),
+      periodRevenue: Math.round(periodRevenue),
+      chartData
+    })
+  } catch (err) {
+    console.error('Error en dashboard:', err.message)
+    res.status(500).json({ error: 'Error interno' })
+  }
+})
+
+function formatDate(date, period) {
+  const d = new Date(date)
+  switch (period) {
+    case 'day':
+      return `${d.getHours()}:00`
+    case 'week':
+      return d.toISOString().split('T')[0]
+    case 'month':
+      return d.toISOString().split('T')[0]
+    case 'year':
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    default:
+      return d.toISOString().split('T')[0]
+  }
+}
 
 // GET /superadmin/empresas
 router.get('/empresas', async (req, res) => {
