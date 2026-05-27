@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
-  AppBar, Toolbar, Typography, Box, Container, Drawer, List,
+  AppBar, Toolbar, Typography, Box, Drawer, List,
   ListItemButton, ListItemIcon, ListItemText, Alert, Button,
-  Avatar, Tooltip, IconButton, alpha, useTheme,
+  Tooltip, IconButton, alpha, useTheme,
 } from '@mui/material'
 import {
   Dashboard as DashboardIcon, Work, People, Settings, Business,
@@ -49,10 +49,6 @@ export default function Layout() {
     }
     return items
   })()
-
-  const initials = companyNombre
-    ? companyNombre.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-    : '?'
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/')
@@ -124,7 +120,7 @@ export default function Layout() {
                   </ListItemIcon>
                   <ListItemText
                     primary={item.label}
-                    primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: active ? 600 : 400 }}
+                    slotProps={{ primary: { fontSize: '0.875rem', fontWeight: active ? 600 : 400 } }}
                   />
                 </ListItemButton>
               )
@@ -133,8 +129,17 @@ export default function Layout() {
         </Box>
       </Drawer>
 
-      {/* Main */}
-      <Box component="main" sx={{ flexGrow: 1, ml: `${DRAWER_WIDTH}px`, pt: '64px' }}>
+      {/* Main — ocupa el espacio restante después del drawer */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          minWidth: 0,
+          pt: '64px',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         {!isSuperAdmin && companyStatus === 'trial' && daysLeftTrial !== null && (
           <Alert
             severity="info"
@@ -155,9 +160,19 @@ export default function Layout() {
             Tu suscripción está suspendida. Reactiva para continuar usando el servicio.
           </Alert>
         )}
-        <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, md: 4 } }}>
+        {/* Área de contenido centrada dentro del espacio disponible */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            width: '100%',
+            maxWidth: 1200,
+            mx: 'auto',
+            px: { xs: 2, md: 4 },
+            py: 4,
+          }}
+        >
           <Outlet />
-        </Container>
+        </Box>
       </Box>
     </Box>
   )

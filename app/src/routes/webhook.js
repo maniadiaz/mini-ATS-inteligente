@@ -109,6 +109,34 @@ router.post('/stripe', async (req, res) => {
       }
     }
 
+    // Handle checkout.session.expired — usuario abandonó el pago
+    if (event.type === 'checkout.session.expired') {
+      const session = event.data.object
+      const companyId = session.metadata?.company_id
+
+      if (companyId && session.mode === 'subscription') {
+        await Subscription.update(
+          { status: 'cancelled' },
+          { where: { company_id: companyId, status: 'pending' } }
+        )
+        console.log('Checkout abandonado — suscripción cancelada para company:', companyId)
+      }
+    }
+
+    // Handle checkout.session.async_payment_failed — pago rechazado
+    if (event.type === 'checkout.session.async_payment_failed') {
+      const session = event.data.object
+      const companyId = session.metadata?.company_id
+
+      if (companyId) {
+        await Subscription.update(
+          { status: 'rejected' },
+          { where: { company_id: companyId, status: 'pending' } }
+        )
+        console.log('Pago rechazado para company:', companyId)
+      }
+    }
+
     // Handle customer.subscription.deleted
     if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object

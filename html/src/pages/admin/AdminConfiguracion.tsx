@@ -4,7 +4,7 @@ import {
   Box, Typography, Card, CardContent, Button, Chip, LinearProgress,
   Alert, CircularProgress, Snackbar, Divider,
 } from '@mui/material'
-import { CreditCard, ShoppingCart, CheckCircle, Warning, Cancel } from '@mui/icons-material'
+import { CreditCard, ShoppingCart, CheckCircle, Warning, Cancel, HourglassEmpty, CreditCardOff } from '@mui/icons-material'
 import api from '../../api/axios'
 import { useAuth } from '../../context/AuthContext'
 
@@ -196,6 +196,51 @@ export default function AdminConfiguracion() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* ─── Estados de pago pendiente / cancelado / rechazado ─── */}
+      {data?.subscription?.status === 'pending' && status !== 'active' && (
+        <Alert
+          severity="warning"
+          icon={<HourglassEmpty fontSize="inherit" />}
+          sx={{ mb: 3 }}
+          action={
+            <Button color="inherit" size="small" onClick={handleActivar} disabled={activating}>
+              {activating ? <CircularProgress size={16} color="inherit" /> : 'Reintentar pago'}
+            </Button>
+          }
+        >
+          Tienes un pago pendiente de completar. Si ya iniciaste el proceso, termínalo o inténtalo de nuevo.
+        </Alert>
+      )}
+
+      {data?.subscription?.status === 'cancelled' && status !== 'active' && (
+        <Alert
+          severity="info"
+          sx={{ mb: 3 }}
+          action={
+            <Button color="inherit" size="small" onClick={handleActivar} disabled={activating}>
+              {activating ? <CircularProgress size={16} color="inherit" /> : 'Iniciar pago'}
+            </Button>
+          }
+        >
+          Tu proceso de pago fue cancelado o no se completó. Puedes intentarlo cuando quieras.
+        </Alert>
+      )}
+
+      {data?.subscription?.status === 'rejected' && status !== 'active' && (
+        <Alert
+          severity="error"
+          icon={<CreditCardOff fontSize="inherit" />}
+          sx={{ mb: 3 }}
+          action={
+            <Button color="inherit" size="small" onClick={handleActivar} disabled={activating}>
+              {activating ? <CircularProgress size={16} color="inherit" /> : 'Reintentar con otra tarjeta'}
+            </Button>
+          }
+        >
+          Tu pago fue rechazado. Verifica los datos de tu tarjeta e intenta de nuevo.
+        </Alert>
       )}
 
       {/* ─── Sección 2: Uso de CVs ─── */}

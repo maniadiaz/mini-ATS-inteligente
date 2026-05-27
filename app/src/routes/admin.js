@@ -177,6 +177,12 @@ router.post('/suscripcion/iniciar', async (req, res) => {
     const company = await Company.findByPk(req.company_id)
     if (!company) return res.status(404).json({ error: 'Empresa no encontrada' })
 
+    // Cancelar suscripciones pendientes anteriores para no acumular basura
+    await Subscription.update(
+      { status: 'cancelled' },
+      { where: { company_id: req.company_id, status: 'pending' } }
+    )
+
     // Get or create Stripe Customer
     let customerId = company.stripe_customer_id
     if (!customerId) {

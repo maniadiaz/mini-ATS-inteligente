@@ -24,8 +24,20 @@ interface EmpresaRow {
   createdAt: string
 }
 
-const statusColors: Record<string, 'info' | 'success' | 'error' | 'default'> = {
+const statusColors: Record<string, 'info' | 'success' | 'error' | 'default' | 'warning'> = {
   trial: 'info', active: 'success', suspended: 'error', cancelled: 'default',
+}
+
+type SubBadge = { label: string; color: 'success' | 'warning' | 'error' | 'default' }
+const subscriptionBadge = (status: string): SubBadge => {
+  const map: Record<string, SubBadge> = {
+    authorized: { label: 'Activa',     color: 'success' },
+    pending:    { label: 'Pendiente',  color: 'warning' },
+    cancelled:  { label: 'Cancelada', color: 'default' },
+    rejected:   { label: 'Rechazada', color: 'error'   },
+    paused:     { label: 'Pausada',   color: 'warning' },
+  }
+  return map[status] ?? { label: status, color: 'default' }
 }
 
 export default function SuperAdminEmpresas() {
@@ -118,11 +130,18 @@ export default function SuperAdminEmpresas() {
                         <Typography variant="body2" color="text.secondary">
                           Registrada: {new Date(e.createdAt).toLocaleDateString('es-MX')}
                         </Typography>
-                        {e.subscription && (
-                          <Typography variant="body2" color="text.secondary">
-                            Suscripción: {e.subscription.status} — ${e.subscription.amount} MXN
-                          </Typography>
-                        )}
+                        {e.subscription && (() => {
+                          const badge = subscriptionBadge(e.subscription.status)
+                          return (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                              <Typography variant="body2" color="text.secondary">Suscripción:</Typography>
+                              <Chip label={badge.label} color={badge.color} size="small" />
+                              {e.subscription.amount && (
+                                <Typography variant="body2" color="text.secondary">— ${e.subscription.amount} MXN/mes</Typography>
+                              )}
+                            </Box>
+                          )
+                        })()}
                       </Box>
                     </Collapse>
                   </TableCell>

@@ -24,7 +24,7 @@ const Subscription = sequelize.define('Subscription', {
     allowNull: true,
   },
   status: {
-    type: DataTypes.ENUM('authorized', 'paused', 'cancelled', 'pending'),
+    type: DataTypes.ENUM('authorized', 'paused', 'cancelled', 'pending', 'rejected'),
     defaultValue: 'pending',
   },
   current_period_end: {
