@@ -14,6 +14,7 @@ import AdminConfiguracion from './pages/admin/AdminConfiguracion'
 import AdminEmpresa from './pages/admin/AdminEmpresa'
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard'
 import SuperAdminEmpresas from './pages/superadmin/SuperAdminEmpresas'
+import SuperAdminVacantes from './pages/superadmin/SuperAdminVacantes'
 import SuperAdminPagos from './pages/superadmin/SuperAdminPagos'
 import SuperAdminPlan from './pages/superadmin/SuperAdminPlan'
 
@@ -53,6 +54,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
             <Route path="/superadmin/empresas" element={<SuperAdminEmpresas />} />
+            <Route path="/superadmin/vacantes" element={<SuperAdminVacantes />} />
             <Route path="/superadmin/pagos" element={<SuperAdminPagos />} />
             <Route path="/superadmin/plan" element={<SuperAdminPlan />} />
           </Route>

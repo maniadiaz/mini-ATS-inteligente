@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Box, Typography, Card, CardContent, Grid, Chip, CircularProgress,
-  Alert, Avatar, Skeleton, useTheme,
+  Alert, Avatar, Skeleton, useTheme, alpha,
 } from '@mui/material'
 import {
   Business, WorkspacePremium, TrendingUp, Work,
@@ -37,49 +37,49 @@ interface AdminStats {
   empresasPorMes: Array<{ mes: string; empresas: number }>
 }
 
-const STATUS_META: Record<string, { label: string; color: 'success' | 'info' | 'warning' | 'error' | 'default' }> = {
-  active:    { label: 'Activa',     color: 'success' },
-  trial:     { label: 'Trial',      color: 'info'    },
-  suspended: { label: 'Suspendida', color: 'warning' },
-  cancelled: { label: 'Cancelada',  color: 'error'   },
+const STATUS_META: Record<string, { label: string; color: 'success' | 'info' | 'warning' | 'error' | 'default'; bg: string; fg: string }> = {
+  active:    { label: 'Activa',     color: 'success', bg: '#DCFCE7', fg: '#166534' },
+  trial:     { label: 'Trial',      color: 'info',    bg: '#DBEAFE', fg: '#1E40AF' },
+  suspended: { label: 'Suspendida', color: 'warning', bg: '#FEF3C7', fg: '#92400E' },
+  cancelled: { label: 'Cancelada',  color: 'error',   bg: '#FEE2E2', fg: '#991B1B' },
 }
 
-const PIE_COLORS = ['#2196f3', '#4caf50', '#ff9800', '#f44336']
+const PIE_COLORS = ['#2196F3', '#16A34A', '#D97706', '#DC2626']
 
 function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-  color = 'primary.main',
-  loading = false,
+  icon, label, value, sub, iconBg, iconColor, loading = false,
 }: {
   icon: React.ReactNode
   label: string
   value: string | number
   sub?: string
-  color?: string
+  iconBg: string
+  iconColor: string
   loading?: boolean
 }) {
   return (
     <Card sx={{ height: '100%' }}>
-      <CardContent sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-        <Avatar sx={{ bgcolor: color, width: 44, height: 44, flexShrink: 0 }}>
+      <CardContent sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, p: 2.5, '&:last-child': { pb: 2.5 } }}>
+        <Box sx={{
+          width: 48, height: 48, borderRadius: '14px',
+          bgcolor: iconBg, color: iconColor,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
           {icon}
-        </Avatar>
-        <Box>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, display: 'block', mb: 0.5 }}>
             {label}
           </Typography>
           {loading ? (
-            <Skeleton width={60} height={36} />
+            <Skeleton width={56} height={36} />
           ) : (
-            <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, lineHeight: 1, fontFamily: '"Sora", sans-serif' }}>
               {value}
             </Typography>
           )}
-          {sub && (
-            <Typography variant="caption" color="text.secondary">
+          {sub && !loading && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: 'block' }}>
               {sub}
             </Typography>
           )}
@@ -102,119 +102,139 @@ export default function SuperAdminDashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (error) {
-    return <Alert severity="error">{error}</Alert>
-  }
+  if (error) return <Alert severity="error">{error}</Alert>
 
   const pieData = stats
     ? [
-        { name: 'Trial',      value: stats.empresasTrial,      color: PIE_COLORS[0] },
-        { name: 'Activas',    value: stats.empresasActivas,     color: PIE_COLORS[1] },
-        { name: 'Suspendidas',value: stats.empresasSuspendidas, color: PIE_COLORS[2] },
-        { name: 'Canceladas', value: stats.empresasCanceladas,  color: PIE_COLORS[3] },
+        { name: 'Trial',       value: stats.empresasTrial,       color: PIE_COLORS[0] },
+        { name: 'Activas',     value: stats.empresasActivas,      color: PIE_COLORS[1] },
+        { name: 'Suspendidas', value: stats.empresasSuspendidas,  color: PIE_COLORS[2] },
+        { name: 'Canceladas',  value: stats.empresasCanceladas,   color: PIE_COLORS[3] },
       ].filter(d => d.value > 0)
     : []
 
+  const today = new Date().toLocaleDateString('es-MX', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  })
+
   return (
     <Box>
-      <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
-        Dashboard
-      </Typography>
+      {/* ── Header ── */}
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 4 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.25, letterSpacing: '-0.3px' }}>
+            Dashboard
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+            {today}
+          </Typography>
+        </Box>
+        <Chip
+          label="Super Admin"
+          icon={<WorkspacePremium sx={{ fontSize: 14 }} />}
+          color="primary"
+          sx={{ fontWeight: 600, borderRadius: '8px' }}
+        />
+      </Box>
 
-      {/* ── Row 1: 4 main metric cards ── */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      {/* ── Row 1: 4 KPI cards ── */}
+      <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            icon={<Business fontSize="small" />}
-            label="Empresas totales"
+            icon={<Business />} label="Empresas totales"
             value={loading ? '–' : stats!.totalEmpresas}
             sub={loading ? undefined : `+${stats!.empresasEsteMes} este mes`}
-            color="primary.main"
+            iconBg={alpha(theme.palette.primary.main, 0.1)}
+            iconColor={theme.palette.primary.main}
             loading={loading}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            icon={<CheckCircle fontSize="small" />}
-            label="Empresas activas"
+            icon={<CheckCircle />} label="Empresas activas"
             value={loading ? '–' : stats!.empresasActivas}
-            color={theme.palette.success.main}
+            iconBg={alpha(theme.palette.success.main, 0.1)}
+            iconColor={theme.palette.success.main}
             loading={loading}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            icon={<HourglassEmpty fontSize="small" />}
-            label="En período de prueba"
+            icon={<HourglassEmpty />} label="En período de prueba"
             value={loading ? '–' : stats!.empresasTrial}
-            color={theme.palette.info.main}
+            iconBg={alpha(theme.palette.info.main, 0.1)}
+            iconColor={theme.palette.info.main}
             loading={loading}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            icon={<Work fontSize="small" />}
-            label="Vacantes activas"
+            icon={<Work />} label="Vacantes activas"
             value={loading ? '–' : stats!.vacantesActivas}
             sub={loading ? undefined : `de ${stats!.totalVacantes} totales`}
-            color={theme.palette.warning.main}
+            iconBg={alpha(theme.palette.warning.main, 0.1)}
+            iconColor={theme.palette.warning.main}
             loading={loading}
           />
         </Grid>
       </Grid>
 
-      {/* ── Row 2: 3 secondary metrics ── */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      {/* ── Row 2: 3 secondary cards ── */}
+      <Grid container spacing={2.5} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={4}>
           <StatCard
-            icon={<Group fontSize="small" />}
-            label="Postulaciones totales"
+            icon={<Group />} label="Postulaciones totales"
             value={loading ? '–' : stats!.totalPostulaciones}
-            color={theme.palette.secondary.main}
+            iconBg={alpha(theme.palette.secondary.main, 0.1)}
+            iconColor={theme.palette.secondary.main}
             loading={loading}
           />
         </Grid>
         <Grid item xs={12} sm={4}>
           <StatCard
-            icon={<Pause fontSize="small" />}
-            label="Empresas suspendidas"
+            icon={<Pause />} label="Empresas suspendidas"
             value={loading ? '–' : stats!.empresasSuspendidas}
-            color={theme.palette.warning.dark}
+            iconBg={alpha(theme.palette.warning.main, 0.08)}
+            iconColor={theme.palette.warning.dark}
             loading={loading}
           />
         </Grid>
         <Grid item xs={12} sm={4}>
           <StatCard
-            icon={<Cancel fontSize="small" />}
-            label="Empresas canceladas"
+            icon={<Cancel />} label="Empresas canceladas"
             value={loading ? '–' : stats!.empresasCanceladas}
-            color={theme.palette.error.main}
+            iconBg={alpha(theme.palette.error.main, 0.08)}
+            iconColor={theme.palette.error.main}
             loading={loading}
           />
         </Grid>
       </Grid>
 
       {/* ── Row 3: Charts ── */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Bar chart — empresas por mes */}
+      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+        {/* Bar chart */}
         <Grid item xs={12} md={7}>
           <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2.5 }}>
                 Empresas registradas — últimos 6 meses
               </Typography>
               {loading ? (
-                <Skeleton variant="rectangular" height={260} />
+                <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 2 }} />
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={stats!.empresasPorMes}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                    <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={stats!.empresasPorMes} barSize={28}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} vertical={false} />
+                    <XAxis dataKey="mes" tick={{ fontSize: 12, fill: theme.palette.text.secondary }} axisLine={false} tickLine={false} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: theme.palette.text.secondary }} axisLine={false} tickLine={false} />
                     <ReTooltip
-                      contentStyle={{ background: theme.palette.background.paper, border: `1px solid ${theme.palette.divider}` }}
+                      contentStyle={{
+                        background: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 8, fontSize: 13,
+                      }}
                     />
-                    <Bar dataKey="empresas" name="Empresas" fill={theme.palette.primary.main} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="empresas" name="Empresas" fill={theme.palette.primary.main} radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -222,23 +242,23 @@ export default function SuperAdminDashboard() {
           </Card>
         </Grid>
 
-        {/* Pie chart — empresa por estado */}
+        {/* Pie chart */}
         <Grid item xs={12} md={5}>
           <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+            <CardContent sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2.5 }}>
                 Distribución por estado
               </Typography>
               {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 260 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
                   <CircularProgress />
                 </Box>
               ) : pieData.length === 0 ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 260 }}>
-                  <Typography color="text.secondary">Sin datos</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+                  <Typography color="text.secondary" variant="body2">Sin datos</Typography>
                 </Box>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={240}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -246,17 +266,28 @@ export default function SuperAdminDashboard() {
                       nameKey="name"
                       cx="50%"
                       cy="50%"
+                      innerRadius={60}
                       outerRadius={90}
-                      label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                      paddingAngle={3}
+                      label={({ name, percent }: { name?: string; percent?: number }) =>
+                        `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
                       labelLine={false}
                     >
                       {pieData.map((entry, idx) => (
                         <Cell key={idx} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Legend />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(value) => <span style={{ fontSize: 12, color: theme.palette.text.secondary }}>{value}</span>}
+                    />
                     <ReTooltip
-                      contentStyle={{ background: theme.palette.background.paper, border: `1px solid ${theme.palette.divider}` }}
+                      contentStyle={{
+                        background: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 8, fontSize: 13,
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -267,15 +298,15 @@ export default function SuperAdminDashboard() {
       </Grid>
 
       {/* ── Row 4: Tables ── */}
-      <Grid container spacing={3}>
-        {/* Top 5 by vacantes */}
+      <Grid container spacing={2.5}>
+        {/* Top 5 */}
         <Grid item xs={12} md={6}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <TrendingUp color="primary" fontSize="small" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Top 5 por vacantes
+            <CardContent sx={{ p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+                <TrendingUp sx={{ fontSize: 18, color: 'primary.main' }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  Top 5 — más vacantes
                 </Typography>
               </Box>
               {loading ? (
@@ -286,24 +317,37 @@ export default function SuperAdminDashboard() {
                 <Typography color="text.secondary" variant="body2">Sin empresas registradas</Typography>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {stats!.top5.map((c, idx) => (
-                    <Box key={c.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
-                      <Avatar sx={{ width: 28, height: 28, fontSize: '0.75rem', bgcolor: 'primary.light', color: 'primary.contrastText' }}>
-                        {idx + 1}
-                      </Avatar>
-                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>{c.nombre}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {c.vacantes_activas} activas de {c.total_vacantes}
-                        </Typography>
+                  {stats!.top5.map((c, idx) => {
+                    const meta = STATUS_META[c.status] || STATUS_META.trial
+                    return (
+                      <Box key={c.id} sx={{
+                        display: 'flex', alignItems: 'center', gap: 1.5, py: 0.75, px: 1,
+                        borderRadius: 2,
+                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) },
+                      }}>
+                        <Avatar sx={{
+                          width: 28, height: 28, fontSize: '0.72rem', fontWeight: 700,
+                          bgcolor: theme.palette.primary.main, color: 'white', borderRadius: '7px',
+                        }}>
+                          {idx + 1}
+                        </Avatar>
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>{c.nombre}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {c.vacantes_activas} activas · {c.total_vacantes} total
+                          </Typography>
+                        </Box>
+                        <Box sx={{
+                          px: 1, py: 0.25, borderRadius: '100px',
+                          bgcolor: meta.bg,
+                        }}>
+                          <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: meta.fg }}>
+                            {meta.label}
+                          </Typography>
+                        </Box>
                       </Box>
-                      <Chip
-                        label={STATUS_META[c.status]?.label || c.status}
-                        color={STATUS_META[c.status]?.color || 'default'}
-                        size="small"
-                      />
-                    </Box>
-                  ))}
+                    )
+                  })}
                 </Box>
               )}
             </CardContent>
@@ -313,11 +357,11 @@ export default function SuperAdminDashboard() {
         {/* Last 5 registered */}
         <Grid item xs={12} md={6}>
           <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <WorkspacePremium color="primary" fontSize="small" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Últimas empresas registradas
+            <CardContent sx={{ p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+                <WorkspacePremium sx={{ fontSize: 18, color: 'primary.main' }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  Últimas registradas
                 </Typography>
               </Box>
               {loading ? (
@@ -328,26 +372,37 @@ export default function SuperAdminDashboard() {
                 <Typography color="text.secondary" variant="body2">Sin empresas registradas</Typography>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {stats!.ultimasEmpresas.map((c) => (
-                    <Box key={c.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
-                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'grey.200', color: 'text.primary', fontSize: '0.8rem' }}>
-                        {c.nombre.charAt(0).toUpperCase()}
-                      </Avatar>
-                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>{c.nombre}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {c.createdAt
-                            ? new Date(c.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
-                            : '–'}
-                        </Typography>
+                  {stats!.ultimasEmpresas.map((c) => {
+                    const meta = STATUS_META[c.status] || STATUS_META.trial
+                    return (
+                      <Box key={c.id} sx={{
+                        display: 'flex', alignItems: 'center', gap: 1.5, py: 0.75, px: 1,
+                        borderRadius: 2,
+                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) },
+                      }}>
+                        <Avatar sx={{
+                          width: 32, height: 32, fontWeight: 700, fontSize: '0.8rem',
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          color: 'primary.main', borderRadius: '9px',
+                        }}>
+                          {c.nombre.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>{c.nombre}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {c.createdAt
+                              ? new Date(c.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+                              : '–'}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ px: 1, py: 0.25, borderRadius: '100px', bgcolor: meta.bg }}>
+                          <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: meta.fg }}>
+                            {meta.label}
+                          </Typography>
+                        </Box>
                       </Box>
-                      <Chip
-                        label={STATUS_META[c.status]?.label || c.status}
-                        color={STATUS_META[c.status]?.color || 'default'}
-                        size="small"
-                      />
-                    </Box>
-                  ))}
+                    )
+                  })}
                 </Box>
               )}
             </CardContent>

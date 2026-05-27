@@ -22,7 +22,7 @@ function getInitials(name: string): string {
   return name.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?'
 }
 
-const AVATAR_COLORS = ['#1A3C5E','#2196F3','#4CAF50','#FF9800','#9C27B0','#00BCD4','#E91E63']
+const AVATAR_COLORS = ['#1A3C5E', '#2196F3', '#4CAF50', '#D97706', '#9C27B0', '#0891B2', '#DC2626']
 function avatarColor(name: string): string {
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
@@ -46,9 +46,7 @@ export default function CandidatoRow({ postulacion, index }: Props) {
       link.download = postulacion.filename.split('_').slice(1).join('_') || 'cv.pdf'
       document.body.appendChild(link); link.click(); link.remove()
       window.URL.revokeObjectURL(url)
-    } catch (err) {
-      console.error('Error descargando CV:', err)
-    }
+    } catch { /* silent */ }
   }
 
   const color = avatarColor(postulacion.nombre)
@@ -64,39 +62,67 @@ export default function CandidatoRow({ postulacion, index }: Props) {
         }}
         onClick={() => setOpen(!open)}
       >
-        <TableCell sx={{ py: 1 }}>
-          <IconButton size="small" sx={{ color: 'text.secondary' }}>
-            {open ? <KeyboardArrowUp fontSize="small" /> : <KeyboardArrowDown fontSize="small" />}
+        <TableCell sx={{ py: 1.5 }}>
+          <IconButton size="small" sx={{ color: 'text.secondary', transition: 'transform 0.2s ease', transform: open ? 'rotate(180deg)' : 'none' }}>
+            <KeyboardArrowDown fontSize="small" />
           </IconButton>
         </TableCell>
-        <TableCell sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{index + 1}</TableCell>
+
+        <TableCell sx={{ color: 'text.disabled', fontSize: '0.78rem', fontWeight: 600 }}>
+          {index + 1}
+        </TableCell>
+
         <TableCell>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Avatar sx={{ width: 32, height: 32, fontSize: '0.75rem', fontWeight: 700, bgcolor: color, color: 'white' }}>
+            <Avatar sx={{
+              width: 34, height: 34, fontSize: '0.75rem', fontWeight: 700,
+              bgcolor: color, color: 'white', borderRadius: '9px',
+            }}>
               {getInitials(postulacion.nombre)}
             </Avatar>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{postulacion.nombre}</Typography>
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                {postulacion.nombre}
+              </Typography>
+            </Box>
           </Box>
         </TableCell>
-        <TableCell sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>{postulacion.telefono}</TableCell>
-        <TableCell sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>{postulacion.email}</TableCell>
-        <TableCell><ScoreBadge score={r?.score_total || 0} /></TableCell>
+
+        <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
+          {postulacion.telefono}
+        </TableCell>
+
+        <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
+          {postulacion.email}
+        </TableCell>
+
+        <TableCell>
+          <ScoreBadge score={r?.score_total || 0} />
+        </TableCell>
+
         <TableCell>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.4 }}>
             {(habilidades?.encontrados || []).slice(0, 3).map((item) => (
               <Chip key={item} label={item} size="small" color="success" variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 22 }} />
+                sx={{ fontSize: '0.68rem', height: 20, borderRadius: '4px' }} />
             ))}
             {(habilidades?.encontrados || []).length > 3 && (
-              <Chip label={`+${(habilidades?.encontrados || []).length - 3}`} size="small" variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 22 }} />
+              <Chip
+                label={`+${(habilidades?.encontrados || []).length - 3}`} size="small"
+                sx={{ fontSize: '0.68rem', height: 20, borderRadius: '4px' }}
+              />
             )}
           </Box>
         </TableCell>
-        <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
-          {match?.ingles?.detalle?.substring(0, 20) || '—'}
+
+        <TableCell sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+          {match?.ingles?.detalle?.substring(0, 18) || '—'}
         </TableCell>
-        <TableCell><RecomendacionBadge recomendacion={r?.recomendacion || 'REVISAR'} /></TableCell>
+
+        <TableCell>
+          <RecomendacionBadge recomendacion={r?.recomendacion || 'REVISAR'} />
+        </TableCell>
+
         <TableCell>
           <IconButton size="small" onClick={handleDownload} color="primary">
             <Download fontSize="small" />
@@ -104,91 +130,100 @@ export default function CandidatoRow({ postulacion, index }: Props) {
         </TableCell>
       </TableRow>
 
-      {/* Expanded detail */}
+      {/* ── Expanded detail ── */}
       <TableRow>
         <TableCell colSpan={10} sx={{ py: 0, border: open ? undefined : 'none' }}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{
-              py: 2.5, px: 2,
-              bgcolor: alpha(theme.palette.primary.main, 0.03),
+              py: 3, px: 3,
+              bgcolor: alpha(theme.palette.primary.main, 0.025),
               borderBottom: `1px solid ${theme.palette.divider}`,
             }}>
               {/* Resumen ejecutivo */}
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, lineHeight: 1.7, fontStyle: 'italic' }}>
-                {r?.resumen_ejecutivo}
-              </Typography>
+              {r?.resumen_ejecutivo && (
+                <Box sx={{
+                  p: 2, borderRadius: 2,
+                  bgcolor: alpha(theme.palette.primary.main, 0.04),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                  mb: 3,
+                }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                    Resumen ejecutivo
+                  </Typography>
+                  <Typography variant="body2" sx={{ lineHeight: 1.7 }}>
+                    {r.resumen_ejecutivo}
+                  </Typography>
+                </Box>
+              )}
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
                 {/* Fortalezas */}
                 <Box>
-                  <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'text.secondary', display: 'block', mb: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'success.dark', display: 'block', mb: 1 }}>
                     Fortalezas
                   </Typography>
                   <List dense disablePadding>
                     {(r?.fortalezas || []).map((f, i) => (
-                      <ListItem key={i} disablePadding sx={{ mb: 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: 28 }}>
-                          <CheckCircle color="success" sx={{ fontSize: 16 }} />
+                      <ListItem key={i} disablePadding sx={{ mb: 0.5, alignItems: 'flex-start' }}>
+                        <ListItemIcon sx={{ minWidth: 24, mt: 0.25 }}>
+                          <CheckCircle color="success" sx={{ fontSize: 14 }} />
                         </ListItemIcon>
-                        <ListItemText primary={f} primaryTypographyProps={{ variant: 'body2' }} />
-                      </ListItem>
-                    ))}
-                  </List>
-
-                  <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'text.secondary', display: 'block', mb: 1, mt: 2 }}>
-                    Áreas de mejora
-                  </Typography>
-                  <List dense disablePadding>
-                    {(r?.debilidades || []).map((d, i) => (
-                      <ListItem key={i} disablePadding sx={{ mb: 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: 28 }}>
-                          <Cancel color="error" sx={{ fontSize: 16 }} />
-                        </ListItemIcon>
-                        <ListItemText primary={d} primaryTypographyProps={{ variant: 'body2' }} />
+                        <ListItemText primary={f} primaryTypographyProps={{ variant: 'body2', lineHeight: 1.5 }} />
                       </ListItem>
                     ))}
                   </List>
                 </Box>
 
-                {/* Habilidades + Score detalle */}
+                {/* Debilidades */}
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'error.dark', display: 'block', mb: 1 }}>
+                    Áreas de mejora
+                  </Typography>
+                  <List dense disablePadding>
+                    {(r?.debilidades || []).map((d, i) => (
+                      <ListItem key={i} disablePadding sx={{ mb: 0.5, alignItems: 'flex-start' }}>
+                        <ListItemIcon sx={{ minWidth: 24, mt: 0.25 }}>
+                          <Cancel color="error" sx={{ fontSize: 14 }} />
+                        </ListItemIcon>
+                        <ListItemText primary={d} primaryTypographyProps={{ variant: 'body2', lineHeight: 1.5 }} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+
+                {/* Habilidades + Score */}
                 <Box>
                   {habilidades && (
                     <>
-                      <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'text.secondary', display: 'block', mb: 1 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', display: 'block', mb: 1 }}>
                         Habilidades encontradas
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
                         {(habilidades.encontrados || []).map(s => (
-                          <Chip key={s} label={s} size="small" color="success" variant="outlined" sx={{ fontSize: '0.7rem' }} />
+                          <Chip key={s} label={s} size="small" color="success" variant="outlined" sx={{ fontSize: '0.68rem', borderRadius: '4px' }} />
                         ))}
                       </Box>
                       {(habilidades.faltantes || []).length > 0 && (
                         <>
-                          <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'text.secondary', display: 'block', mb: 1 }}>
-                            Habilidades faltantes
+                          <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', display: 'block', mb: 1 }}>
+                            Faltantes
                           </Typography>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
                             {(habilidades.faltantes || []).map(s => (
-                              <Chip key={s} label={s} size="small" color="error" variant="outlined" sx={{ fontSize: '0.7rem' }} />
+                              <Chip key={s} label={s} size="small" color="error" variant="outlined" sx={{ fontSize: '0.68rem', borderRadius: '4px' }} />
                             ))}
                           </Box>
                         </>
                       )}
                     </>
                   )}
-
-                  <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'text.secondary', display: 'block', mb: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary', display: 'block', mb: 1 }}>
                     Score ATS
                   </Typography>
                   <Chip
-                    label={`${r?.score_total || 0}/100`}
-                    size="small"
-                    color={
-                      (r?.score_total || 0) >= 75 ? 'success'
-                      : (r?.score_total || 0) >= 50 ? 'warning'
-                      : 'error'
-                    }
-                    sx={{ fontWeight: 700, fontSize: '0.85rem' }}
+                    label={`${r?.score_total || 0} / 100`}
+                    color={(r?.score_total || 0) >= 75 ? 'success' : (r?.score_total || 0) >= 50 ? 'warning' : 'error'}
+                    sx={{ fontWeight: 700, fontSize: '0.82rem', borderRadius: '6px' }}
                   />
                 </Box>
               </Box>

@@ -122,6 +122,36 @@ export interface ResultadoIA {
   resumen_ejecutivo: string
 }
 
+export interface VacanteResumen {
+  id: string
+  puesto: string
+  area: string | null
+  activa: boolean
+  fecha_inicio: string | null
+  fecha_fin: string | null
+  total_postulaciones: number
+  aptos: number
+  no_aptos: number
+  revisar: number
+  createdAt: string
+}
+
+export interface EmpresaConVacantes {
+  id: string
+  nombre: string
+  email: string
+  logo_url: string | null
+  status: string
+  total_vacantes: number
+  vacantes_activas: number
+  vacantes_cerradas: number
+  vacantes_este_mes: number
+  total_postulaciones: number
+  postulaciones_este_mes: number
+  aptos: number
+  vacantes: VacanteResumen[]
+}
+
 export interface Postulacion {
   id: string
   company_id: string

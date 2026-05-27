@@ -7,7 +7,7 @@ async function exportarExcel(res, vacante, postulaciones) {
   // Headers
   const headers = [
     'ID', 'Nombre Completo', 'Teléfono', 'Correo', 'Score %',
-    'Stack Match', 'Stack Encontrado', 'Stack Faltante',
+    'Habilidades Match', 'Habilidades Encontradas', 'Habilidades Faltantes',
     'Inglés Requerido', 'Inglés Detectado', 'Años Exp Cumple',
     'ATS Legible', 'Problemas ATS', 'Fortalezas', 'Debilidades',
     'Recomendación', 'Pasó o No Pasó',
@@ -44,7 +44,8 @@ async function exportarExcel(res, vacante, postulaciones) {
   postulaciones.forEach((post, idx) => {
     const r = post.resultado || {};
     const match = r.match_requisitos || {};
-    const stackInfo = match.stack || {};
+    // 'habilidades' es el campo actual; 'stack' es fallback para registros legacy en DB
+    const stackInfo = match.habilidades || match.stack || {};
     const ats = r.ats_legibilidad || {};
 
     const recomendacion = r.recomendacion || 'REVISAR';
