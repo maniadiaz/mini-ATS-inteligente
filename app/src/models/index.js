@@ -31,27 +31,39 @@ async function seedInitial() {
   const email = process.env.SUPERADMIN_EMAIL
   const password = process.env.SUPERADMIN_PASSWORD
   if (email && password) {
-    const exists = await User.findOne({ where: { email, role: 'superadmin' } })
-    if (!exists) {
-      // Create internal company for superadmin
-      const superCompany = await Company.create({
+    // 1. Ensure the superadmin's internal company exists
+    const [superCompany] = await Company.findOrCreate({
+      where: { email },
+      defaults: {
         nombre: process.env.SUPERADMIN_COMPANY_NAME || 'ServerControl',
+        rfc: '',
         email,
         status: 'active',
         cv_limit: 999999,
         cv_analizados_mes: 0,
         cv_extras: 0,
-      })
+        trial_ends_at: null,
+        periodo_actual: new Date(),
+      },
+    })
 
+    // 2. Create or update the superadmin user
+    const existingSuperAdmin = await User.findOne({ where: { email, role: 'superadmin' } })
+    if (!existingSuperAdmin) {
       const password_hash = await User.hashPassword(password)
       await User.create({
         nombre: process.env.SUPERADMIN_NOMBRE || 'Super Admin',
         email,
         password_hash,
         role: 'superadmin',
+        activo: true,
         company_id: superCompany.id,
       })
       console.log(`Superadmin "${email}" creado con empresa "${superCompany.nombre}".`)
+    } else if (!existingSuperAdmin.company_id) {
+      // Migrate existing superadmin that has no company assigned yet
+      await existingSuperAdmin.update({ company_id: superCompany.id })
+      console.log(`Superadmin "${email}" actualizado con company_id ${superCompany.id}.`)
     }
   }
 

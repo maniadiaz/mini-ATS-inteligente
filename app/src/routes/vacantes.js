@@ -46,13 +46,19 @@ router.use(requireJWT, tenant, checkStatus)
 // GET /vacante — list vacantes for company
 router.get('/', async (req, res) => {
   try {
-    const where = req.company_id ? { company_id: req.company_id } : {}
+    if (!req.company_id) {
+      return res.status(400).json({ error: 'company_id requerido' })
+    }
     const vacantes = await Vacante.findAll({
-      where,
+      where: { company_id: req.company_id },
       include: [{ model: Postulacion, as: 'postulaciones', attributes: ['id'] }],
       order: [['createdAt', 'DESC']],
     })
-    res.json(vacantes)
+    const data = vacantes.map(v => ({
+      ...v.toJSON(),
+      postulantes_count: v.postulaciones?.length ?? 0,
+    }))
+    res.json(data)
   } catch (err) {
     console.error('Error listando vacantes:', err.message)
     res.status(500).json({ error: 'Error interno' })

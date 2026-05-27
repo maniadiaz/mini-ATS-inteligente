@@ -165,7 +165,7 @@ export default function Layout() {
               : 'Tu período de prueba ha terminado'}
           </Alert>
         )}
-        {!isSuperAdmin && companyStatus === 'suspended' && (
+        {!isSuperAdmin && (companyStatus === 'suspended' || companyStatus === 'cancelled') && (
           <Alert
             severity="error"
             action={<Button size="small" color="inherit" onClick={() => navigate('/admin/configuracion')}>Reactivar</Button>}

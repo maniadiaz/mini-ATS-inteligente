@@ -7,6 +7,7 @@ import {
 import { Add, PeopleAlt, CalendarToday } from '@mui/icons-material'
 import api from '../api/axios'
 import { Vacante } from '../types'
+import { useAuth } from '../context/AuthContext'
 
 function getVacanteStatus(v: Vacante): { label: string; color: 'success' | 'primary' | 'default' | 'error' } {
   const now = new Date()
@@ -59,6 +60,7 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const navigate = useNavigate()
   const theme = useTheme()
+  const { isSuperAdmin, companyNombre } = useAuth()
 
   useEffect(() => { loadVacantes() }, [])
 
@@ -77,11 +79,15 @@ export default function Dashboard() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.25 }}>Mis vacantes</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.25 }}>
+            {isSuperAdmin ? 'Mis vacantes' : 'Vacantes'}
+          </Typography>
           <Typography variant="body2" color="text.secondary">
-            {vacantes.length > 0
-              ? `${vacantes.length} vacante${vacantes.length !== 1 ? 's' : ''} en total`
-              : 'Gestiona tus procesos de reclutamiento'}
+            {isSuperAdmin && companyNombre
+              ? companyNombre
+              : vacantes.length > 0
+                ? `${vacantes.length} vacante${vacantes.length !== 1 ? 's' : ''} en total`
+                : 'Gestiona tus procesos de reclutamiento'}
           </Typography>
         </Box>
         <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/vacante/nueva')} size="large">
