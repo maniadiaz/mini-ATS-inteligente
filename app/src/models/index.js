@@ -33,15 +33,25 @@ async function seedInitial() {
   if (email && password) {
     const exists = await User.findOne({ where: { email, role: 'superadmin' } })
     if (!exists) {
+      // Create internal company for superadmin
+      const superCompany = await Company.create({
+        nombre: process.env.SUPERADMIN_COMPANY_NAME || 'ServerControl',
+        email,
+        status: 'active',
+        cv_limit: 999999,
+        cv_analizados_mes: 0,
+        cv_extras: 0,
+      })
+
       const password_hash = await User.hashPassword(password)
       await User.create({
-        nombre: 'Super Admin',
+        nombre: process.env.SUPERADMIN_NOMBRE || 'Super Admin',
         email,
         password_hash,
         role: 'superadmin',
-        company_id: null,
+        company_id: superCompany.id,
       })
-      console.log(`Superadmin "${email}" creado.`)
+      console.log(`Superadmin "${email}" creado con empresa "${superCompany.nombre}".`)
     }
   }
 

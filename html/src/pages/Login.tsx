@@ -27,7 +27,7 @@ export default function Login() {
     try {
       const res = await api.post('/auth/login', { email, password })
       login(res.data.token)
-      navigate('/dashboard')
+      navigate(res.data.redirectTo || '/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.error || 'Credenciales incorrectas')
     } finally {

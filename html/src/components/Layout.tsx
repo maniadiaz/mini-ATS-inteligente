@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   AppBar, Toolbar, Typography, Box, Drawer, List,
   ListItemButton, ListItemIcon, ListItemText, Alert, Button,
-  Tooltip, IconButton, alpha, useTheme,
+  Tooltip, IconButton, alpha, useTheme, Divider,
 } from '@mui/material'
 import {
   Dashboard as DashboardIcon, Work, People, Settings, Business,
@@ -31,13 +31,17 @@ export default function Layout() {
   const navItems = (() => {
     if (isSuperAdmin) {
       return [
-        { label: 'Dashboard', icon: <DashboardIcon fontSize="small" />, path: '/superadmin/dashboard' },
-        { label: 'Empresas', icon: <Business fontSize="small" />, path: '/superadmin/empresas' },
-        { label: 'Pagos', icon: <Payments fontSize="small" />, path: '/superadmin/pagos' },
-        { label: 'Plan', icon: <Tune fontSize="small" />, path: '/superadmin/plan' },
+        { label: 'Dashboard', icon: <DashboardIcon fontSize="small" />, path: '/superadmin/dashboard', group: 'admin' },
+        { label: 'Empresas', icon: <Business fontSize="small" />, path: '/superadmin/empresas', group: 'admin' },
+        { label: 'Vacantes', icon: <Work fontSize="small" />, path: '/superadmin/vacantes', group: 'admin' },
+        { label: 'Pagos', icon: <Payments fontSize="small" />, path: '/superadmin/pagos', group: 'admin' },
+        { label: 'Plan', icon: <Tune fontSize="small" />, path: '/superadmin/plan', group: 'admin' },
+        { label: '__divider__', icon: <></>, path: '', group: 'divider' },
+        { label: 'Mis vacantes', icon: <Work fontSize="small" />, path: '/dashboard', group: 'personal' },
+        { label: 'Mi empresa', icon: <Business fontSize="small" />, path: '/admin/empresa', group: 'personal' },
       ]
     }
-    const items: { label: string; icon: JSX.Element; path: string }[] = [
+    const items: { label: string; icon: JSX.Element; path: string; group?: string }[] = [
       { label: 'Vacantes', icon: <Work fontSize="small" />, path: '/dashboard' },
     ]
     if (role === 'admin') {
@@ -98,7 +102,17 @@ export default function Layout() {
       >
         <Box sx={{ pt: 1.5, pb: 2 }}>
           <List disablePadding>
-            {navItems.map((item) => {
+            {navItems.map((item, idx) => {
+              if (item.group === 'divider') {
+                return (
+                  <Box key={`divider-${idx}`} sx={{ px: 2, py: 1 }}>
+                    <Divider />
+                    <Typography variant="caption" color="text.disabled" sx={{ px: 0.5, pt: 0.5, display: 'block', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.68rem' }}>
+                      Mi cuenta
+                    </Typography>
+                  </Box>
+                )
+              }
               const active = isActive(item.path)
               return (
                 <ListItemButton

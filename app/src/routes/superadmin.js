@@ -251,6 +251,156 @@ router.patch('/empresas/:id/status', async (req, res) => {
   }
 })
 
+// GET /superadmin/stats — company-focused metrics for the superadmin overview dashboard
+router.get('/stats', async (req, res) => {
+  try {
+    const { Postulacion } = require('../models')
+    const now = new Date()
+    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1)
+
+    // Company counts by status
+    const totalEmpresas = await Company.count()
+    const empresasActivas = await Company.count({ where: { status: 'active' } })
+    const empresasTrial = await Company.count({ where: { status: 'trial' } })
+    const empresasSuspendidas = await Company.count({ where: { status: 'suspended' } })
+    const empresasCanceladas = await Company.count({ where: { status: 'cancelled' } })
+
+    // Vacantes & postulaciones
+    const totalVacantes = await Vacante.count()
+    const vacantesActivas = await Vacante.count({ where: { activa: true } })
+    const totalPostulaciones = await (require('../models').Postulacion).count()
+
+    // Nuevas empresas este mes
+    const empresasEsteMes = await Company.count({
+      where: { createdAt: { [Op.gte]: inicioMes } }
+    })
+
+    // Top 5 empresas por número de vacantes
+    const top5Companies = await Company.findAll({
+      include: [
+        { model: Vacante, as: 'vacantes', attributes: ['id', 'activa'] },
+      ],
+      order: [['createdAt', 'DESC']],
+    })
+    const top5 = top5Companies
+      .map(c => ({
+        id: c.id,
+        nombre: c.nombre,
+        status: c.status,
+        total_vacantes: c.vacantes?.length || 0,
+        vacantes_activas: c.vacantes?.filter(v => v.activa).length || 0,
+      }))
+      .sort((a, b) => b.total_vacantes - a.total_vacantes)
+      .slice(0, 5)
+
+    // Last 5 registered companies
+    const last5Companies = await Company.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 5,
+      attributes: ['id', 'nombre', 'status', 'createdAt'],
+    })
+    const ultimasEmpresas = last5Companies.map(c => ({
+      id: c.id,
+      nombre: c.nombre,
+      status: c.status,
+      createdAt: c.createdAt,
+    }))
+
+    // Empresas registradas por mes — last 6 months
+    const empresasPorMes = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const fin = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
+      const count = await Company.count({
+        where: { createdAt: { [Op.gte]: d, [Op.lt]: fin } }
+      })
+      const label = d.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' })
+      empresasPorMes.push({ mes: label, empresas: count })
+    }
+
+    res.json({
+      totalEmpresas,
+      empresasActivas,
+      empresasTrial,
+      empresasSuspendidas,
+      empresasCanceladas,
+      empresasEsteMes,
+      totalVacantes,
+      vacantesActivas,
+      totalPostulaciones,
+      top5,
+      ultimasEmpresas,
+      empresasPorMes,
+    })
+  } catch (err) {
+    console.error('Error en stats superadmin:', err.message)
+    res.status(500).json({ error: 'Error interno' })
+  }
+})
+
+// GET /superadmin/vacantes — todas las empresas con sus vacantes agrupadas
+router.get('/vacantes', async (req, res) => {
+  try {
+    const { Postulacion } = require('../models')
+    const empresas = await Company.findAll({
+      include: [{
+        model: Vacante,
+        as: 'vacantes',
+        include: [{
+          model: Postulacion,
+          as: 'postulaciones',
+          attributes: ['id', 'createdAt', 'resultado'],
+        }],
+      }],
+      order: [['createdAt', 'DESC']],
+    })
+
+    const ahora = new Date()
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
+
+    const data = empresas.map(empresa => {
+      const vacantes = empresa.vacantes || []
+
+      return {
+        id: empresa.id,
+        nombre: empresa.nombre,
+        logo_url: empresa.logo_url || null,
+        status: empresa.status,
+        total_vacantes: vacantes.length,
+        vacantes_activas: vacantes.filter(v => v.activa).length,
+        vacantes_cerradas: vacantes.filter(v => !v.activa).length,
+        vacantes_este_mes: vacantes.filter(v => new Date(v.createdAt) >= inicioMes).length,
+        total_postulaciones: vacantes.reduce((acc, v) => acc + (v.postulaciones?.length || 0), 0),
+        postulaciones_este_mes: vacantes.reduce((acc, v) => {
+          const posts = v.postulaciones?.filter(p => new Date(p.createdAt) >= inicioMes) || []
+          return acc + posts.length
+        }, 0),
+        aptos: vacantes.reduce((acc, v) => {
+          return acc + (v.postulaciones?.filter(p => p.resultado?.recomendacion === 'APTO').length || 0)
+        }, 0),
+        vacantes: vacantes.map(v => ({
+          id: v.id,
+          puesto: v.puesto,
+          area: v.area || null,
+          activa: v.activa,
+          fecha_inicio: v.fecha_inicio || null,
+          fecha_fin: v.fecha_fin || null,
+          total_postulaciones: v.postulaciones?.length || 0,
+          aptos: v.postulaciones?.filter(p => p.resultado?.recomendacion === 'APTO').length || 0,
+          no_aptos: v.postulaciones?.filter(p => p.resultado?.recomendacion === 'NO APTO').length || 0,
+          revisar: v.postulaciones?.filter(p => p.resultado?.recomendacion === 'REVISAR').length || 0,
+          createdAt: v.createdAt,
+        })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+      }
+    })
+
+    res.json(data)
+  } catch (err) {
+    console.error('Error obteniendo vacantes por empresa:', err.message)
+    res.status(500).json({ error: 'Error interno' })
+  }
+})
+
 // GET /superadmin/pagos
 router.get('/pagos', async (req, res) => {
   try {
