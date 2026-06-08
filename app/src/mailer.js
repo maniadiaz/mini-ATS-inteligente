@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
   },
 })
 
-const from = `"ATS Pro" <${process.env.MAIL_USER || 'no-reply@ats.com'}>`
+const from = `"ATS Pro" <${process.env.MAIL_USER}>`
 
 // ─── Styles ───────────────────────────────────────────────────────────────
 const s = {

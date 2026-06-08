@@ -1,15 +1,18 @@
-# Frontend — Mini ATS Inteligente
+# Frontend — ATS Pro
 
 Panel de reclutamiento SPA construido con React + TypeScript + Material UI.
 
 ## Stack
 
-- **Framework:** React 18 + Vite + TypeScript
-- **UI:** Material UI v6 (MUI)
-- **Routing:** React Router v6
-- **HTTP:** Axios con interceptores JWT
-- **Estado:** Context API (AuthContext)
-- **Fuente:** Inter (Google Fonts)
+| Librería | Uso |
+|---|---|
+| **React 18 + Vite** | Framework + build tool |
+| **TypeScript** | Tipado estático |
+| **Material UI v6 (MUI)** | Sistema de diseño |
+| **React Router v6** | Enrutamiento SPA |
+| **Axios** | HTTP con interceptores JWT |
+| **Recharts** | Gráficas (BarChart, PieChart) |
+| **DM Sans + Sora** | Tipografías via Google Fonts |
 
 ## Instalación
 
@@ -19,25 +22,20 @@ cp .env.example .env
 npm install
 ```
 
-## Variables de entorno (.env)
+## Variables de entorno
 
 | Variable | Descripción |
-|----------|-------------|
+|---|---|
 | `VITE_API_URL` | Base URL de la API (default: `/api`) |
 
-En producción, Nginx sirve el build estático y proxea `/api/` al backend.
+En producción Nginx proxea `/api/` al backend — no se necesita cambiar esta variable.
 
-## Uso
+## Comandos
 
 ```bash
-# Desarrollo (Vite dev server con HMR)
-npm run dev
-
-# Build para producción
-npm run build
-
-# Preview del build
-npm run preview
+npm run dev      # Vite dev server con HMR
+npm run build    # Build de producción → dist/
+npm run preview  # Preview del build local
 ```
 
 ## Estructura
@@ -45,26 +43,41 @@ npm run preview
 ```
 html/
 ├── src/
-│   ├── main.tsx                ← Entry point (React + MUI + Router)
-│   ├── App.tsx                 ← Router principal
-│   ├── theme.ts               ← Tema MUI (#1A3C5E + Inter)
+│   ├── main.tsx                         ← Entry point (React + MUI + Router + CSS)
+│   ├── App.tsx                          ← Árbol de rutas con roles
+│   ├── theme.ts                         ← Tema MUI (colores, tipografía, radios, overrides)
+│   ├── index.css                        ← Animaciones CSS (fadeInUp, shake, scaleIn…)
 │   ├── api/
-│   │   └── axios.ts           ← Instancia Axios + interceptores JWT
+│   │   └── axios.ts                     ← Instancia Axios + interceptor JWT + redirect 401
 │   ├── context/
-│   │   └── AuthContext.tsx    ← Token, login(), logout(), isAuthenticated
+│   │   ├── AuthContext.tsx              ← Token, user, login(), logout(), role helpers
+│   │   └── ThemeContext.tsx             ← Toggle light/dark mode
 │   ├── types/
-│   │   └── index.ts           ← Interfaces TypeScript
+│   │   └── index.ts                     ← Interfaces TypeScript (Vacante, Postulacion, etc.)
 │   ├── components/
-│   │   ├── Layout.tsx         ← AppBar + Outlet
-│   │   ├── ProtectedRoute.tsx ← Redirect a /login si no hay token
-│   │   ├── ScoreBadge.tsx     ← Chip color por score
-│   │   ├── RecomendacionBadge.tsx ← APTO/REVISAR/NO APTO
-│   │   └── CandidatoRow.tsx   ← Fila expandible de la tabla
+│   │   ├── Layout.tsx                   ← Drawer 248px + AppBar + sección labels por rol
+│   │   ├── ProtectedRoute.tsx           ← Guard por rol (allowedRoles)
+│   │   ├── PublicRoute.tsx              ← Redirige a dashboard si ya hay sesión
+│   │   ├── CandidatoRow.tsx             ← Fila expandible con detalle del candidato
+│   │   ├── ScoreBadge.tsx              ← Badge numérico coloreado por score
+│   │   └── RecomendacionBadge.tsx      ← APTO / REVISAR / NO APTO
 │   └── pages/
-│       ├── Login.tsx
-│       ├── Dashboard.tsx      ← Grid de vacantes
-│       ├── NuevaVacante.tsx   ← Formulario crear vacante
-│       └── VacanteDashboard.tsx ← Ranking + filtros + export
+│       ├── Login.tsx                    ← Split panel + shake on error
+│       ├── Register.tsx                 ← Split panel + password strength bar
+│       ├── Dashboard.tsx                ← Grid de vacantes con hover CTA
+│       ├── NuevaVacante.tsx             ← Formulario 4-secciones para crear vacante
+│       ├── VacanteDashboard.tsx         ← Ranking de candidatos + filtros + export
+│       ├── admin/
+│       │   ├── AdminUsuarios.tsx        ← CRUD de usuarios de la empresa
+│       │   ├── AdminEmpresa.tsx         ← Perfil de empresa + upload de logo
+│       │   ├── AdminConfiguracion.tsx   ← Suscripción, uso de CVs, paquetes extra
+│       │   └── AdminSuscripcion.tsx     ← (redirect legacy → /admin/configuracion)
+│       └── superadmin/
+│           ├── SuperAdminDashboard.tsx  ← KPIs globales + BarChart + PieChart
+│           ├── SuperAdminEmpresas.tsx   ← Lista y gestión de todas las empresas
+│           ├── SuperAdminVacantes.tsx   ← Vacantes agrupadas por empresa (Accordion)
+│           ├── SuperAdminPagos.tsx      ← Historial de pagos y suscripciones
+│           └── SuperAdminPlan.tsx       ← Configuración del plan global
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
@@ -73,21 +86,58 @@ html/
 └── deploy.sh
 ```
 
-## Páginas
+## Rutas
 
-| Ruta | Página | Acceso |
-|------|--------|--------|
-| `/login` | Login | Pública |
-| `/dashboard` | Lista de vacantes | Protegida |
-| `/vacante/nueva` | Crear vacante | Protegida |
-| `/vacante/:vid` | Ranking de candidatos | Protegida |
+### Públicas
+
+| Ruta | Página |
+|---|---|
+| `/login` | Login |
+| `/register` | Registro de empresa |
+
+### Protegidas (cualquier rol autenticado)
+
+| Ruta | Página |
+|---|---|
+| `/dashboard` | Lista de vacantes de la empresa |
+| `/vacante/nueva` | Crear nueva vacante |
+| `/vacante/:vid` | Dashboard de candidatos de una vacante |
+
+### Admin (`admin` o `superadmin`)
+
+| Ruta | Página |
+|---|---|
+| `/admin/usuarios` | Gestión de usuarios |
+| `/admin/empresa` | Perfil y logo de empresa |
+| `/admin/configuracion` | Suscripción, CVs y paquetes |
+
+### Superadmin
+
+| Ruta | Página |
+|---|---|
+| `/superadmin/dashboard` | Panel global con KPIs y gráficas |
+| `/superadmin/empresas` | Todas las empresas registradas |
+| `/superadmin/vacantes` | Vacantes agrupadas por empresa |
+| `/superadmin/pagos` | Historial de pagos Stripe |
+| `/superadmin/plan` | Configuración del plan |
 
 ## Autenticación
 
 - JWT guardado en `localStorage` con key `ats_token`
-- Interceptor Axios agrega `Authorization: Bearer <token>` automáticamente
+- `AuthContext` expone: `user`, `token`, `login()`, `logout()`, `isSuperAdmin`, `isAdmin`, `isAuthenticated`
+- Interceptor Axios agrega `Authorization: Bearer <token>` en cada request
 - Si el backend responde 401 → limpia token y redirige a `/login`
-- `ProtectedRoute` verifica el token antes de renderizar rutas protegidas
+- Al hacer login, el backend devuelve `redirectTo` (`/dashboard` o `/superadmin/dashboard` según el rol)
+
+## Sistema de diseño
+
+- **Tipografía:** DM Sans (body) + Sora (headings `h1`–`h6`, fontWeight 800)
+- **Color primario:** `#1A3C5E` con gradiente en botones principales
+- **Border radius:** 16px en Cards, 10px global, 8px en botones
+- **Animaciones:** `fadeInUp`, `fadeIn`, `shake`, `scaleIn` definidas en `index.css`
+- **Stagger:** `animationDelay: idx * 40ms` en listas de cards/accordions
+- **Sin colores hardcodeados** — siempre `theme.palette.*`
+- **Status badges:** colores semánticos con `{ bg, fg }` custom (no Chip `color` prop)
 
 ## Despliegue
 
@@ -96,12 +146,12 @@ html/
 cd /var/www/ats.servercontrol-mzt.com/html
 npm install
 npm run build
+# dist/ es servido por Nginx como archivos estáticos
 ```
 
-El build genera `dist/` que Nginx sirve como archivos estáticos. No necesita PM2.
-
-### Script rápido
+El frontend no necesita PM2 — es un build estático.
 
 ```bash
+# Script rápido
 ./deploy.sh
 ```

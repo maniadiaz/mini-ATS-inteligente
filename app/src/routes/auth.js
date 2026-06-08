@@ -6,7 +6,7 @@ const { sendWelcomeEmail } = require('../mailer')
 const { requireJWT } = require('../middleware/auth')
 
 const router = express.Router()
-const JWT_SECRET = process.env.JWT_SECRET || 'default-jwt-secret'
+const JWT_SECRET = process.env.JWT_SECRET
 
 // POST /auth/login
 router.post('/login', async (req, res) => {
@@ -150,7 +150,7 @@ router.get('/verify', requireJWT, (req, res) => {
 // GET /auth/refresh — Refresh token with updated company status
 router.get('/refresh', requireJWT, async (req, res) => {
   try {
-    const user = await User.findByPk(req.user_id, {
+    const user = await User.findByPk(req.user.id, {
       include: [{ model: Company, as: 'company' }],
     })
 

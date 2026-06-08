@@ -209,7 +209,8 @@ router.post('/suscripcion/iniciar', async (req, res) => {
       metadata: { company_id: company.id },
       subscription_data: {
         metadata: { company_id: company.id }
-      }
+      },
+      allow_promotion_codes: true,
     })
 
     // Save pending subscription
@@ -260,7 +261,8 @@ router.post('/cvpack/comprar', async (req, res) => {
       }],
       success_url: `${process.env.BASE_URL}/admin/suscripcion?pack=success`,
       cancel_url: `${process.env.BASE_URL}/admin/suscripcion?pack=cancelled`,
-      metadata: { company_id: company.id, type: 'cv_pack' }
+      metadata: { company_id: company.id, type: 'cv_pack' },
+      allow_promotion_codes: true,
     })
 
     // Save CvPack record

@@ -211,10 +211,10 @@ export default function SuperAdminDashboard() {
       </Grid>
 
       {/* ── Row 3: Charts ── */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+      <Grid container spacing={2.5} sx={{ mb: 3 }} alignItems="stretch">
         {/* Bar chart */}
-        <Grid item xs={12} md={7}>
-          <Card>
+        <Grid item xs={12} md={7} sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Card sx={{ flex: 1 }}>
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2.5 }}>
                 Empresas registradas — últimos 6 meses
@@ -243,9 +243,9 @@ export default function SuperAdminDashboard() {
         </Grid>
 
         {/* Pie chart */}
-        <Grid item xs={12} md={5}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Grid item xs={12} md={5} sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ p: 2.5, flex: 1, display: 'flex', flexDirection: 'column', '&:last-child': { pb: 2.5 } }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2.5 }}>
                 Distribución por estado
               </Typography>
@@ -258,20 +258,18 @@ export default function SuperAdminDashboard() {
                   <Typography color="text.secondary" variant="body2">Sin datos</Typography>
                 </Box>
               ) : (
-                <ResponsiveContainer width="100%" height={240}>
-                  <PieChart>
+                <Box sx={{ flex: 1, minHeight: 200 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart margin={{ top: 8, right: 16, bottom: 8, left: 16 }}>
                     <Pie
                       data={pieData}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
+                      cy="45%"
+                      innerRadius={58}
+                      outerRadius={88}
                       paddingAngle={3}
-                      label={({ name, percent }: { name?: string; percent?: number }) =>
-                        `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                      labelLine={false}
                     >
                       {pieData.map((entry, idx) => (
                         <Cell key={idx} fill={entry.color} />
@@ -280,9 +278,14 @@ export default function SuperAdminDashboard() {
                     <Legend
                       iconType="circle"
                       iconSize={8}
-                      formatter={(value) => <span style={{ fontSize: 12, color: theme.palette.text.secondary }}>{value}</span>}
+                      formatter={(value, entry: any) => (
+                        <span style={{ fontSize: 12, color: theme.palette.text.secondary }}>
+                          {value} — <strong style={{ color: theme.palette.text.primary }}>{entry.payload?.value}</strong>
+                        </span>
+                      )}
                     />
                     <ReTooltip
+                      formatter={(value, name) => [`${value} empresas`, String(name)]}
                       contentStyle={{
                         background: theme.palette.background.paper,
                         border: `1px solid ${theme.palette.divider}`,
@@ -291,6 +294,7 @@ export default function SuperAdminDashboard() {
                     />
                   </PieChart>
                 </ResponsiveContainer>
+                </Box>
               )}
             </CardContent>
           </Card>

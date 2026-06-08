@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default-jwt-secret'
+const JWT_SECRET = process.env.JWT_SECRET
 
 function requireJWT(req, res, next) {
   const authHeader = req.headers.authorization

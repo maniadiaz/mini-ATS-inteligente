@@ -1,32 +1,34 @@
-# Mini ATS Inteligente
+# ATS Pro — Mini ATS Inteligente
 
-Sistema de seguimiento de candidatos (ATS) con análisis de CVs mediante inteligencia artificial (GPT-4o).
+Sistema de seguimiento de candidatos (ATS) multi-tenant con análisis de CVs mediante IA (GPT-4o), gestión de suscripciones con Stripe y panel de superadministrador.
 
 ## Arquitectura
 
-El proyecto está dividido en dos partes independientes:
-
 ```
 mini-ATS-inteligente/
-├── app/          ← Backend (Node.js + Express + API REST + EJS)
+├── app/          ← Backend (Node.js + Express + Sequelize + Stripe)
 ├── html/         ← Frontend (React + Vite + TypeScript + MUI)
-├── nginx.conf    ← Configuración de Nginx para producción
+├── nginx.conf    ← Configuración Nginx para producción
 └── .gitignore
 ```
 
 | Componente | Tecnología | Puerto |
-|-----------|------------|--------|
-| Backend | Node.js + Express | 3105 |
-| Frontend | React (SPA estática) | Servida por Nginx |
-| Proxy | Nginx | 443 (SSL) |
+|---|---|---|
+| Backend API | Node.js + Express | 3105 |
+| Base de datos | MySQL (Sequelize) | — |
+| Frontend | React SPA (build estático) | Servido por Nginx |
+| Proxy inverso | Nginx | 443 (SSL) |
+| Procesador de pagos | Stripe Checkout + Webhooks | — |
 
-## Requisitos
+## Modelo de negocio (multi-tenant)
 
-- Node.js >= 18
-- npm >= 9
-- Cuenta de OpenAI con acceso a GPT-4o
+- Cada **empresa** (tenant) tiene sus propios usuarios, vacantes y candidatos.
+- Las empresas se registran en **trial** (período de prueba con límite de CVs).
+- Al activar pagan una **suscripción mensual** vía Stripe.
+- Pueden comprar **paquetes de CVs extra** como pago único.
+- El **superadmin** tiene panel propio para gestionar todas las empresas.
 
-## Setup rápido
+## Setup rápido (desarrollo)
 
 ```bash
 # Backend
@@ -48,9 +50,10 @@ npm run dev
 
 ```bash
 cd /var/www/ats.servercontrol-mzt.com/app
-npm install
-pm2 start src/app.js --name ats-api
+npm install --omit=dev
+pm2 start src/app.js --name ats-app
 pm2 save
+pm2 startup
 ```
 
 ### Frontend (build estático)
@@ -59,28 +62,34 @@ pm2 save
 cd /var/www/ats.servercontrol-mzt.com/html
 npm install
 npm run build
-# dist/ servido por Nginx
+# El directorio dist/ es servido por Nginx
 ```
 
 ### Nginx
 
-Copiar `nginx.conf` a `/etc/nginx/sites-available/ats.servercontrol-mzt.com` y habilitar.
+Copiar `nginx.conf` a `/etc/nginx/sites-available/ats.servercontrol-mzt.com` y habilitar con `sites-enabled`.
 
 ## Flujo de requests
 
 ```
-Browser → Nginx (443)
-  ├── /               → html/dist/index.html (React SPA)
-  ├── /api/*          → localhost:3105/* (Express API, JWT)
-  ├── /postular/*     → localhost:3105/postular/* (EJS público)
-  └── /confirmacion/* → localhost:3105/confirmacion/* (EJS público)
+Browser → Nginx (443 SSL)
+  ├── /                    → html/dist/index.html (React SPA)
+  ├── /api/*               → localhost:3105/* (Express JWT API)
+  ├── /postular/:vid       → localhost:3105/postular/:vid (EJS público candidatos)
+  ├── /confirmacion/:pid   → localhost:3105/confirmacion/:pid (EJS público)
+  ├── /logos/*             → archivos estáticos (logos de empresas)
+  └── /webhook             → localhost:3105/webhook (Stripe, raw body)
 ```
+
+## Roles del sistema
+
+| Rol | Acceso |
+|---|---|
+| `recruiter` | Ver vacantes y candidatos propios |
+| `admin` | Recruiter + gestión de usuarios, suscripción y empresa |
+| `superadmin` | Todo + panel global de empresas, pagos y configuración del plan |
 
 ## Documentación por componente
 
 - [Backend (app/)](app/README.md)
 - [Frontend (html/)](html/README.md)
-
-## Licencia
-
-MIT
