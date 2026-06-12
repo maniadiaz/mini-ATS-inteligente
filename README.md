@@ -49,7 +49,7 @@ npm run dev
 ### Backend (PM2)
 
 ```bash
-cd /var/www/ats.servercontrol-mzt.com/app
+cd /var/www/tudominio.com/app
 npm install --omit=dev
 pm2 start src/app.js --name ats-app
 pm2 save
@@ -59,7 +59,7 @@ pm2 startup
 ### Frontend (build estático)
 
 ```bash
-cd /var/www/ats.servercontrol-mzt.com/html
+cd /var/www/tudominio.com/html
 npm install
 npm run build
 # El directorio dist/ es servido por Nginx
@@ -67,7 +67,7 @@ npm run build
 
 ### Nginx
 
-Copiar `nginx.conf` a `/etc/nginx/sites-available/ats.servercontrol-mzt.com` y habilitar con `sites-enabled`.
+Copiar `nginx.conf` a `/etc/nginx/sites-available/tudominio.com` y habilitar con `sites-enabled`.
 
 ## Flujo de requests
 
