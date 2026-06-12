@@ -143,7 +143,7 @@ html/
 
 ```bash
 # En el servidor
-cd /var/www/ats.servercontrol-mzt.com/html
+cd /var/www/tudominio.com/html
 npm install
 npm run build
 # dist/ es servido por Nginx como archivos estáticos
